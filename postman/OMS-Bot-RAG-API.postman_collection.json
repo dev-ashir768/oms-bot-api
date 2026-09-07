@@ -6,10 +6,22 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:8001" },
-    { "key": "userId", "value": "OR-00009" },
-    { "key": "sessionId", "value": "session_001" },
-    { "key": "userName", "value": "Orio OMS Demo" }
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8001"
+    },
+    {
+      "key": "userId",
+      "value": "OR-00009"
+    },
+    {
+      "key": "sessionId",
+      "value": "session_001"
+    },
+    {
+      "key": "userName",
+      "value": "Orio OMS Demo"
+    }
   ],
   "item": [
     {
@@ -21,8 +33,12 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/health",
-              "host": ["{{baseUrl}}"],
-              "path": ["health"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
             }
           }
         },
@@ -32,8 +48,13 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/health/gemini",
-              "host": ["{{baseUrl}}"],
-              "path": ["health", "gemini"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health",
+                "gemini"
+              ]
             },
             "description": "Shows the status of every configured Gemini API key — cooldown remaining and failure count. Useful for debugging rate-limit rotation."
           }
@@ -49,11 +70,21 @@
             "method": "POST",
             "url": {
               "raw": "{{baseUrl}}/api/rag/ingest/text",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "rag", "ingest", "text"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "rag",
+                "ingest",
+                "text"
+              ]
             },
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -67,8 +98,15 @@
             "method": "POST",
             "url": {
               "raw": "{{baseUrl}}/api/rag/ingest/pdf",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "rag", "ingest", "pdf"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "rag",
+                "ingest",
+                "pdf"
+              ]
             },
             "body": {
               "mode": "formdata",
@@ -101,8 +139,15 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/api/rag/ingest/stats",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "rag", "ingest", "stats"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "rag",
+                "ingest",
+                "stats"
+              ]
             }
           }
         }
@@ -112,54 +157,29 @@
       "name": "Chat",
       "item": [
         {
-          "name": "Chat (First Message with userName)",
-          "request": {
-            "method": "POST",
-            "url": {
-              "raw": "{{baseUrl}}/api/chat",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "chat"]
-            },
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"sessionId\": \"{{sessionId}}\",\n  \"userName\": \"{{userName}}\",\n  \"message\": \"Hello!\"\n}"
-            },
-            "description": "First message of a session. Pass userName so the bot addresses the user by name. Session title auto-updates from this message."
-          }
-        },
-        {
-          "name": "Follow-up Message",
-          "request": {
-            "method": "POST",
-            "url": {
-              "raw": "{{baseUrl}}/api/chat",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "chat"]
-            },
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"sessionId\": \"{{sessionId}}\",\n  \"message\": \"How does the order tracking work?\"\n}"
-            }
-          }
-        },
-        {
           "name": "Chat Stream (SSE)",
           "request": {
             "method": "POST",
             "url": {
               "raw": "{{baseUrl}}/api/chat/stream",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "chat", "stream"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chat",
+                "stream"
+              ]
             },
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Accept", "value": "text/event-stream" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "text/event-stream"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -169,88 +189,24 @@
           }
         },
         {
-          "name": "Track Parcel (CN Number)",
-          "request": {
-            "method": "POST",
-            "url": {
-              "raw": "{{baseUrl}}/api/chat",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "chat"]
-            },
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"sessionId\": \"{{sessionId}}\",\n  \"message\": \"Track my parcel KI7541488397\"\n}"
-            }
-          }
-        },
-        {
-          "name": "Track (Just CN Number)",
-          "request": {
-            "method": "POST",
-            "url": {
-              "raw": "{{baseUrl}}/api/chat",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "chat"]
-            },
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"sessionId\": \"{{sessionId}}\",\n  \"message\": \"KI7541488397\"\n}"
-            }
-          }
-        },
-        {
-          "name": "Ask for Sessions (Chat)",
-          "request": {
-            "method": "POST",
-            "url": {
-              "raw": "{{baseUrl}}/api/chat",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "chat"]
-            },
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"sessionId\": \"{{sessionId}}\",\n  \"message\": \"show my sessions\"\n}"
-            }
-          }
-        },
-        {
-          "name": "Ask for History (Chat)",
-          "request": {
-            "method": "POST",
-            "url": {
-              "raw": "{{baseUrl}}/api/chat",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "chat"]
-            },
-            "header": [
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"sessionId\": \"{{sessionId}}\",\n  \"message\": \"show my chat history\"\n}"
-            }
-          }
-        },
-        {
           "name": "Chat (New Session)",
           "request": {
             "method": "POST",
             "url": {
               "raw": "{{baseUrl}}/api/chat",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "chat"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chat"
+              ]
             },
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -269,8 +225,15 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/api/chat/sessions/{{userId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "chat", "sessions", "{{userId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chat",
+                "sessions",
+                "{{userId}}"
+              ]
             }
           }
         },
@@ -280,8 +243,16 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/api/chat/history/{{userId}}/{{sessionId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "chat", "history", "{{userId}}", "{{sessionId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chat",
+                "history",
+                "{{userId}}",
+                "{{sessionId}}"
+              ]
             }
           }
         },
@@ -291,11 +262,21 @@
             "method": "PATCH",
             "url": {
               "raw": "{{baseUrl}}/api/chat/sessions/{{sessionId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "chat", "sessions", "{{sessionId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chat",
+                "sessions",
+                "{{sessionId}}"
+              ]
             },
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -310,10 +291,20 @@
             "method": "DELETE",
             "url": {
               "raw": "{{baseUrl}}/api/chat/sessions/{{sessionId}}?userId={{userId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "chat", "sessions", "{{sessionId}}"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chat",
+                "sessions",
+                "{{sessionId}}"
+              ],
               "query": [
-                { "key": "userId", "value": "{{userId}}" }
+                {
+                  "key": "userId",
+                  "value": "{{userId}}"
+                }
               ]
             },
             "description": "Deletes a session AND all its messages (cascade). Returns 404 if session doesn't belong to this user."
