@@ -43,16 +43,16 @@ function isSessionQuery(message: string): boolean {
 function formatHistoryReply(messages: ChatMessage[], name: string | null): string {
   if (messages.length === 0) {
     return name
-      ? `${name}, is session mein abhi tak koi baat cheet nahi hui hai. Aap mujh se kuch bhi pooch saktay hain!`
-      : `Is session mein abhi tak koi baat cheet nahi hui hai. Aap mujh se kuch bhi pooch saktay hain!`;
+      ? `${name}, there is no conversation in this session yet. Feel free to ask me anything!`
+      : `There is no conversation in this session yet. Feel free to ask me anything!`;
   }
 
   const header = name
-    ? `${name}, yahan aapki is session ki baat cheet hai (${messages.length} messages):\n\n`
-    : `Yahan aapki is session ki baat cheet hai (${messages.length} messages):\n\n`;
+    ? `${name}, here is your conversation from this session (${messages.length} messages):\n\n`
+    : `Here is your conversation from this session (${messages.length} messages):\n\n`;
 
   const formatted = messages.map((m) => {
-    const label = m.sender === "user" ? "🧑 Aap" : `🤖 ${config.botName}`;
+    const label = m.sender === "user" ? "🧑 You" : `🤖 ${config.botName}`;
     const time = m.created_at ? new Date(m.created_at).toLocaleString("en-PK") : "";
     const content = m.content.length > 200 ? m.content.substring(0, 200) + "..." : m.content;
     return `${label}${time ? ` (${time})` : ""}:\n${content}`;
@@ -64,18 +64,18 @@ function formatHistoryReply(messages: ChatMessage[], name: string | null): strin
 function formatSessionsReply(sessions: ChatSession[], name: string | null): string {
   if (sessions.length === 0) {
     return name
-      ? `${name}, aapka abhi tak koi session nahi hai. Yeh aapka pehla session hai!`
-      : `Aapka abhi tak koi session nahi hai. Yeh aapka pehla session hai!`;
+      ? `${name}, you don't have any sessions yet. This is your first one!`
+      : `You don't have any sessions yet. This is your first one!`;
   }
 
   const header = name
-    ? `${name}, aapke total ${sessions.length} session(s) hain:\n\n`
-    : `Aapke total ${sessions.length} session(s) hain:\n\n`;
+    ? `${name}, you have a total of ${sessions.length} session(s):\n\n`
+    : `You have a total of ${sessions.length} session(s):\n\n`;
 
   const formatted = sessions.map((s, i) => {
     const created = new Date(s.created_at).toLocaleString("en-PK");
     const updated = new Date(s.updated_at).toLocaleString("en-PK");
-    return `${i + 1}. **${s.id}**\n   - Started: ${created}\n   - Last active: ${updated}`;
+    return `${i + 1}. **${s.title || s.id}**\n   - Started: ${created}\n   - Last active: ${updated}`;
   });
 
   return header + formatted.join("\n\n");
