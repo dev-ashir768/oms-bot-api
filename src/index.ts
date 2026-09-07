@@ -1,0 +1,73 @@
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import { config } from "./config/env.js";
+import { loadIndex } from "./services/faiss.service.js";
+import { errorHandler } from "./middlewares/error-handler.js";
+import { requestLogger } from "./middlewares/request-logger.js";
+import { createLogger } from "./utils/logger.js";
+import chatRoutes from "./routes/chat.routes.js";
+import ingestRoutes from "./routes/ingest.routes.js";
+import pool from "./db/pool.js";
+
+const log = createLogger("server");
+
+const app = express();
+
+app.use(helmet());
+app.use(cors());
+app.use(requestLogger);
+app.use(express.json({ limit: "10mb" }));
+
+app.use("/api/chat", chatRoutes);
+app.use("/api/rag/ingest", ingestRoutes);
+
+app.get("/health", async (_req, res) => {
+  try {
+    await pool.query("SELECT 1");
+    res.json({ status: "ok", database: "connected", timestamp: new Date().toISOString() });
+  } catch {
+    res.status(503).json({ status: "degraded", database: "disconnected", timestamp: new Date().toISOString() });
+  }
+});
+
+app.use(errorHandler);
+
+async function start(): Promise<void> {
+  log.info("Starting server...");
+
+  try {
+    await pool.query("SELECT 1");
+    log.info("PostgreSQL connected");
+  } catch (err) {
+    log.error("PostgreSQL connection failed", err);
+    process.exit(1);
+  }
+
+  loadIndex();
+
+  app.listen(config.port, () => {
+    log.info(`Server running on port ${config.port}`, { env: config.nodeEnv, pid: process.pid });
+  });
+}
+
+process.on("uncaughtException", (err) => {
+  log.error("Uncaught exception", err);
+  process.exit(1);
+});
+
+process.on("unhandledRejection", (reason) => {
+  log.error("Unhandled rejection", reason);
+  process.exit(1);
+});
+
+process.on("SIGTERM", async () => {
+  log.info("SIGTERM received, shutting down gracefully...");
+  await pool.end();
+  log.info("Database pool closed");
+  process.exit(0);
+});
+
+start();
+
+export default app;

@@ -1,0 +1,239 @@
+{
+  "info": {
+    "name": "OMS Bot - RAG API",
+    "_postman_id": "oms-bot-rag-api",
+    "description": "RAG Backend API with PDF ingestion, chat with caching, tracking, and session management",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8001"
+    },
+    {
+      "key": "userId",
+      "value": "OR-00009"
+    },
+    {
+      "key": "sessionId",
+      "value": "session_001"
+    },
+    {
+      "key": "userName",
+      "value": "Orio OMS Demo"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ingest",
+      "item": [
+        {
+          "name": "Ingest Text Documents",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/rag/ingest/text",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "rag",
+                "ingest",
+                "text"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documents\": [\n    \"OMS Bot is an order management system that handles inventory, shipping, and customer orders.\",\n    \"The system supports real-time order tracking and integrates with multiple shipping carriers.\",\n    \"Users can manage their product catalog, set pricing rules, and automate fulfillment workflows.\",\n    \"The API provides endpoints for order creation, status updates, and bulk operations.\"\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Ingest PDF",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/rag/ingest/pdf",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "rag",
+                "ingest",
+                "pdf"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "",
+                  "description": "Select a PDF file to ingest"
+                },
+                {
+                  "key": "chunkSize",
+                  "value": "1000",
+                  "type": "text",
+                  "description": "Characters per chunk (optional, default 1000)"
+                },
+                {
+                  "key": "chunkOverlap",
+                  "value": "200",
+                  "type": "text",
+                  "description": "Overlap between chunks (optional, default 200)"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Index Stats",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/rag/ingest/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "rag",
+                "ingest",
+                "stats"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chat",
+      "item": [
+        {
+          "name": "Follow-up Message",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/chat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chat"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"sessionId\": \"{{sessionId}}\",\n  \"message\": \"How does the order tracking work?\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Chat (New Session)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/chat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chat"
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"sessionId\": \"session_002\",\n  \"userName\": \"{{userName}}\",\n  \"message\": \"Tell me about the API endpoints available.\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sessions & History",
+      "item": [
+        {
+          "name": "Get User Sessions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/chat/sessions/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chat",
+                "sessions",
+                "{{userId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Chat History",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/chat/history/{{userId}}/{{sessionId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chat",
+                "history",
+                "{{userId}}",
+                "{{sessionId}}"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
