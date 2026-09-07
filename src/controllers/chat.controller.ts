@@ -89,10 +89,13 @@ If you need immediate assistance, feel free to reach out to our support team:
 - Phone: 021-37293292
 - Website: https://getorio.com`;
 
-function safeSaveMessage(sessionId: string, sender: "user" | "model", content: string): void {
-  saveMessage(sessionId, sender, content).catch((err) => {
-    log.error(`Background message save failed (non-blocking)`, { sessionId, sender, error: err });
-  });
+function safeSaveMessage(userId: string, sessionId: string, sender: "user" | "model", content: string): void {
+  ensureUser(userId)
+    .then(() => ensureSession(sessionId, userId))
+    .then(() => saveMessage(sessionId, sender, content))
+    .catch((err) => {
+      log.error(`Background message save failed (non-blocking)`, { sessionId, sender, error: err });
+    });
 }
 
 export async function handleChat(req: Request, res: Response): Promise<void> {
@@ -118,8 +121,8 @@ export async function handleChat(req: Request, res: Response): Promise<void> {
 
       const reply = await trackConsignment(cn);
 
-      safeSaveMessage(sessionId, "user", message);
-      safeSaveMessage(sessionId, "model", reply);
+      safeSaveMessage(userId, sessionId, "user", message);
+      safeSaveMessage(userId, sessionId, "model", reply);
 
       log.info(`Tracking response sent`, { cn, source: "tracking_api", duration: Date.now() - start });
 
@@ -142,8 +145,8 @@ export async function handleChat(req: Request, res: Response): Promise<void> {
         const sessions = await getUserSessions(userId);
         const reply = formatSessionsReply(sessions, resolvedName);
 
-        safeSaveMessage(sessionId, "user", message);
-        safeSaveMessage(sessionId, "model", reply);
+        safeSaveMessage(userId, sessionId, "user", message);
+        safeSaveMessage(userId, sessionId, "model", reply);
 
         log.info(`Sessions response sent`, { source: "sessions_db", sessionCount: sessions.length, duration: Date.now() - start });
 
@@ -161,8 +164,8 @@ export async function handleChat(req: Request, res: Response): Promise<void> {
         const messages = await getFullHistory(userId, sessionId);
         const reply = formatHistoryReply(messages, resolvedName);
 
-        safeSaveMessage(sessionId, "user", message);
-        safeSaveMessage(sessionId, "model", reply);
+        safeSaveMessage(userId, sessionId, "user", message);
+        safeSaveMessage(userId, sessionId, "model", reply);
 
         log.info(`History response sent`, { source: "history_db", messageCount: messages.length, duration: Date.now() - start });
 
@@ -180,8 +183,8 @@ export async function handleChat(req: Request, res: Response): Promise<void> {
 
       const cached = await findCachedResponse(message, questionEmbedding);
       if (cached) {
-        safeSaveMessage(sessionId, "user", message);
-        safeSaveMessage(sessionId, "model", cached.response);
+        safeSaveMessage(userId, sessionId, "user", message);
+        safeSaveMessage(userId, sessionId, "model", cached.response);
 
         log.info(`Serving cached response`, {
           similarity: cached.similarity.toFixed(4),
@@ -290,8 +293,8 @@ ${historyText}`;
       log.error(`AI generation failed, using fallback`, { error: err });
       reply = FALLBACK_RESPONSE;
 
-      safeSaveMessage(sessionId, "user", message);
-      safeSaveMessage(sessionId, "model", reply);
+      safeSaveMessage(userId, sessionId, "user", message);
+      safeSaveMessage(userId, sessionId, "model", reply);
 
       res.json({
         reply,
@@ -304,8 +307,8 @@ ${historyText}`;
     }
 
     // Save messages + cache (fire-and-forget, never block response)
-    safeSaveMessage(sessionId, "user", message);
-    safeSaveMessage(sessionId, "model", reply);
+    safeSaveMessage(userId, sessionId, "user", message);
+    safeSaveMessage(userId, sessionId, "model", reply);
 
     if (questionEmbedding) {
       saveToCache(message, questionEmbedding, reply).catch((err) => {
