@@ -81,9 +81,9 @@ function formatSessionsReply(sessions: ChatSession[], name: string | null): stri
   return header + formatted.join("\n\n");
 }
 
-const FALLBACK_RESPONSE = `Hum abhi aapki request process karne mein masroof hain. Please thori der baad dobara try karein.
+const FALLBACK_RESPONSE = `We're sorry, something went wrong on our end. Please try again in a moment.
 
-Agar fori madad chahiye to hamari team se rabta karein:
+If you need immediate assistance, feel free to reach out to our support team:
 - WhatsApp: 0318-0268894
 - Email: info@getorio.com
 - Phone: 021-37293292
