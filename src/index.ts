@@ -3,6 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 import { config } from "./config/env.js";
 import { loadIndex } from "./services/faiss.service.js";
+import { getKeyPoolStatus } from "./services/gemini.service.js";
 import { errorHandler } from "./middlewares/error-handler.js";
 import { requestLogger } from "./middlewares/request-logger.js";
 import { createLogger } from "./utils/logger.js";
@@ -29,6 +30,10 @@ app.get("/health", async (_req, res) => {
   } catch {
     res.status(503).json({ status: "degraded", database: "disconnected", timestamp: new Date().toISOString() });
   }
+});
+
+app.get("/health/gemini", (_req, res) => {
+  res.json({ keys: getKeyPoolStatus(), timestamp: new Date().toISOString() });
 });
 
 app.use(errorHandler);

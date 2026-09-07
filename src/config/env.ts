@@ -1,10 +1,17 @@
 import "dotenv/config";
 
+const rawKeys = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || "";
+const apiKeys = rawKeys
+  .split(",")
+  .map((k) => k.trim())
+  .filter((k) => k.length > 0);
+
 export const config = {
   port: parseInt(process.env.PORT || "8001", 10),
   nodeEnv: process.env.NODE_ENV || "development",
   databaseUrl: process.env.DATABASE_URL!,
-  geminiApiKey: process.env.GEMINI_API_KEY!,
+  geminiApiKey: apiKeys[0] || "",
+  geminiApiKeys: apiKeys,
   faissIndexDir: process.env.FAISS_INDEX_DIR || "./data/faiss_index",
   ragTopK: parseInt(process.env.RAG_TOP_K || "3", 10),
   chatHistoryLimit: parseInt(process.env.CHAT_HISTORY_LIMIT || "10", 10),
@@ -24,4 +31,8 @@ for (const key of required) {
   if (!config[key]) {
     throw new Error(`Missing required env var for config.${key}`);
   }
+}
+
+if (config.geminiApiKeys.length === 0) {
+  throw new Error("At least one Gemini API key required (GEMINI_API_KEY or GEMINI_API_KEYS)");
 }

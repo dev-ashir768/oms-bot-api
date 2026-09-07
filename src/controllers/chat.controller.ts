@@ -7,9 +7,13 @@ import {
   getFullHistory,
   getUserSessions,
   getUserName,
+  updateSessionTitle,
+  deleteSession,
+  countSessionMessages,
+  getSessionTitle,
 } from "../services/db.service.js";
 import { searchSimilar } from "../services/faiss.service.js";
-import { generateResponse, generateEmbedding } from "../services/gemini.service.js";
+import { generateResponse, generateResponseStream, generateEmbedding } from "../services/gemini.service.js";
 import { findCachedResponse, saveToCache } from "../services/cache.service.js";
 import { isTrackingQuery, extractConsignmentNumber, trackConsignment } from "../services/tracking.service.js";
 import { createLogger } from "../utils/logger.js";
@@ -98,6 +102,36 @@ function safeSaveMessage(userId: string, sessionId: string, sender: "user" | "mo
     });
 }
 
+function generateSmartTitle(message: string): string {
+  const cleaned = message.trim().replace(/\s+/g, " ").replace(/[\n\r]/g, " ");
+  const words = cleaned.split(" ");
+  let title = words.slice(0, 7).join(" ");
+  if (title.length > 50) title = title.substring(0, 47) + "...";
+  else if (words.length > 7) title += "...";
+  return title.charAt(0).toUpperCase() + title.slice(1);
+}
+
+async function maybeUpdateTitleFromFirstMessage(
+  userId: string,
+  sessionId: string,
+  message: string
+): Promise<void> {
+  try {
+    const [msgCount, currentTitle] = await Promise.all([
+      countSessionMessages(sessionId),
+      getSessionTitle(sessionId),
+    ]);
+
+    if (msgCount === 0 && currentTitle && currentTitle.startsWith("New Chat ")) {
+      const smartTitle = generateSmartTitle(message);
+      await updateSessionTitle(sessionId, userId, smartTitle);
+      log.info(`Session title auto-updated from first message`, { sessionId, userId, oldTitle: currentTitle, newTitle: smartTitle });
+    }
+  } catch (err) {
+    log.warn(`Smart title update failed (non-blocking)`, { sessionId, error: err });
+  }
+}
+
 export async function handleChat(req: Request, res: Response): Promise<void> {
   const { userId, sessionId, message, userName } = req.body;
   const start = Date.now();
@@ -112,6 +146,8 @@ export async function handleChat(req: Request, res: Response): Promise<void> {
   } catch (err) {
     log.error(`DB user/session setup failed, continuing anyway`, { error: err });
   }
+
+  maybeUpdateTitleFromFirstMessage(userId, sessionId, message);
 
   try {
     // 1. TRACKING — bypass everything
@@ -373,5 +409,212 @@ export async function handleSessions(
   } catch (err) {
     log.error(`Sessions request failed`, { userId, error: err });
     res.status(500).json({ error: "Failed to fetch sessions." });
+  }
+}
+
+export async function handleUpdateSession(
+  req: Request<{ sessionId: string }>,
+  res: Response
+): Promise<void> {
+  const { sessionId } = req.params;
+  const { userId, title } = req.body;
+
+  log.info(`Update session request`, { sessionId, userId, title, requestId: req.requestId });
+
+  try {
+    const updated = await updateSessionTitle(sessionId, userId, title.trim());
+    if (!updated) {
+      res.status(404).json({ error: "Session not found or does not belong to this user." });
+      return;
+    }
+    res.json({ success: true, sessionId, userId, title: title.trim() });
+  } catch (err) {
+    log.error(`Update session failed`, { sessionId, userId, error: err });
+    res.status(500).json({ error: "Failed to update session." });
+  }
+}
+
+export async function handleDeleteSession(
+  req: Request<{ sessionId: string }>,
+  res: Response
+): Promise<void> {
+  const { sessionId } = req.params;
+  const userId = (req.query.userId as string) || (req.body?.userId as string);
+
+  log.info(`Delete session request`, { sessionId, userId, requestId: req.requestId });
+
+  if (!userId) {
+    res.status(400).json({ error: "userId is required (query or body)." });
+    return;
+  }
+
+  try {
+    const deleted = await deleteSession(sessionId, userId);
+    if (!deleted) {
+      res.status(404).json({ error: "Session not found or does not belong to this user." });
+      return;
+    }
+    res.json({ success: true, sessionId, userId });
+  } catch (err) {
+    log.error(`Delete session failed`, { sessionId, userId, error: err });
+    res.status(500).json({ error: "Failed to delete session." });
+  }
+}
+
+function sseSend(res: Response, event: string, data: object): void {
+  res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+}
+
+export async function handleChatStream(req: Request, res: Response): Promise<void> {
+  const { userId, sessionId, message, userName } = req.body;
+  const start = Date.now();
+
+  log.info(`Chat stream request`, { userId, sessionId, userName, messageLength: message.length, requestId: req.requestId });
+
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache, no-transform");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
+  res.flushHeaders();
+
+  let resolvedName: string | null = null;
+  try {
+    await ensureUser(userId, userName);
+    await ensureSession(sessionId, userId);
+    resolvedName = userName || (await getUserName(userId));
+  } catch (err) {
+    log.error(`Stream DB setup failed`, { error: err });
+  }
+
+  maybeUpdateTitleFromFirstMessage(userId, sessionId, message);
+
+  sseSend(res, "meta", { userId, sessionId });
+
+  try {
+    // 1. TRACKING
+    if (isTrackingQuery(message)) {
+      const cn = extractConsignmentNumber(message)!;
+      const reply = await trackConsignment(cn);
+
+      sseSend(res, "chunk", { text: reply });
+      sseSend(res, "done", { source: "tracking_api", consignmentNumber: cn, responseTime: Date.now() - start });
+
+      safeSaveMessage(userId, sessionId, "user", message);
+      safeSaveMessage(userId, sessionId, "model", reply);
+      res.end();
+      return;
+    }
+
+    // 2. SESSION QUERY
+    if (isSessionQuery(message)) {
+      try {
+        const sessions = await getUserSessions(userId);
+        const reply = formatSessionsReply(sessions, resolvedName);
+
+        sseSend(res, "chunk", { text: reply });
+        sseSend(res, "done", { source: "sessions_db", responseTime: Date.now() - start });
+
+        safeSaveMessage(userId, sessionId, "user", message);
+        safeSaveMessage(userId, sessionId, "model", reply);
+        res.end();
+        return;
+      } catch (err) {
+        log.warn(`Stream: sessions fetch failed, falling through`, { error: err });
+      }
+    }
+
+    // 3. HISTORY QUERY
+    if (isHistoryQuery(message)) {
+      try {
+        const messages = await getFullHistory(userId, sessionId);
+        const reply = formatHistoryReply(messages, resolvedName);
+
+        sseSend(res, "chunk", { text: reply });
+        sseSend(res, "done", { source: "history_db", responseTime: Date.now() - start });
+
+        safeSaveMessage(userId, sessionId, "user", message);
+        safeSaveMessage(userId, sessionId, "model", reply);
+        res.end();
+        return;
+      } catch (err) {
+        log.warn(`Stream: history fetch failed, falling through`, { error: err });
+      }
+    }
+
+    // 4. CACHE
+    let questionEmbedding: number[] | null = null;
+    try {
+      questionEmbedding = await generateEmbedding(message);
+      const cached = await findCachedResponse(message, questionEmbedding);
+      if (cached) {
+        sseSend(res, "chunk", { text: cached.response });
+        sseSend(res, "done", {
+          source: "cache",
+          similarity: parseFloat(cached.similarity.toFixed(4)),
+          responseTime: Date.now() - start,
+        });
+
+        safeSaveMessage(userId, sessionId, "user", message);
+        safeSaveMessage(userId, sessionId, "model", cached.response);
+        res.end();
+        return;
+      }
+    } catch (err) {
+      log.warn(`Stream: cache lookup failed`, { error: err });
+    }
+
+    // 5. RAG + AI STREAM
+    let history: Awaited<ReturnType<typeof getRecentHistory>> = [];
+    let ragResults: Awaited<ReturnType<typeof searchSimilar>> = [];
+
+    const results = await Promise.allSettled([getRecentHistory(sessionId), searchSimilar(message)]);
+    if (results[0].status === "fulfilled") history = results[0].value;
+    if (results[1].status === "fulfilled") ragResults = results[1].value;
+
+    const ragContext = ragResults.length ? ragResults.map((r) => r.text).join("\n\n---\n\n") : "";
+    const historyText = history.map((m) => `${m.sender === "user" ? "User" : "Assistant"}: ${m.content}`).join("\n");
+
+    const defaultPrompt = `You are "${config.botName}", a specialized assistant. Always be polite and professional. Respond in the same language as the user. If the answer is not in the retrieved context, guide the user to support (WhatsApp: 0318-0268894, Email: info@getorio.com, Phone: 021-37293292, Website: getorio.com) — never mention knowledge base internals.${
+      resolvedName ? ` The user's name is "${resolvedName}" — address them naturally.` : ""
+    }`;
+
+    const systemPrompt = `${config.systemPrompt || defaultPrompt}\n\n### Retrieved Context:\n${ragContext}\n\n### Conversation History:\n${historyText}`;
+
+    let fullReply = "";
+    try {
+      for await (const chunk of generateResponseStream(systemPrompt, message)) {
+        fullReply += chunk;
+        sseSend(res, "chunk", { text: chunk });
+      }
+    } catch (err) {
+      log.error(`Stream: AI generation failed`, { error: err });
+      const fallback = FALLBACK_RESPONSE;
+      sseSend(res, "chunk", { text: fallback });
+      sseSend(res, "done", { source: "fallback", responseTime: Date.now() - start });
+
+      safeSaveMessage(userId, sessionId, "user", message);
+      safeSaveMessage(userId, sessionId, "model", fallback);
+      res.end();
+      return;
+    }
+
+    sseSend(res, "done", { source: "ai", responseTime: Date.now() - start });
+
+    safeSaveMessage(userId, sessionId, "user", message);
+    safeSaveMessage(userId, sessionId, "model", fullReply);
+
+    if (questionEmbedding && fullReply) {
+      saveToCache(message, questionEmbedding, fullReply).catch((err) => {
+        log.error(`Stream cache save failed`, { error: err });
+      });
+    }
+
+    log.info(`Stream response complete`, { source: "ai", replyLength: fullReply.length, duration: Date.now() - start });
+    res.end();
+  } catch (err) {
+    log.error(`Stream unexpected error`, { userId, sessionId, error: err });
+    sseSend(res, "chunk", { text: FALLBACK_RESPONSE });
+    sseSend(res, "done", { source: "fallback", responseTime: Date.now() - start });
+    res.end();
   }
 }

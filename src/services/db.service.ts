@@ -132,6 +132,47 @@ export async function getUserSessions(userId: string): Promise<ChatSession[]> {
   return rows;
 }
 
+export async function updateSessionTitle(
+  sessionId: string,
+  userId: string,
+  title: string
+): Promise<boolean> {
+  const { rowCount } = await pool.query(
+    `UPDATE chat_sessions SET title = $1, updated_at = NOW() WHERE id = $2 AND user_id = $3`,
+    [title, sessionId, userId]
+  );
+  log.info(`Session title updated`, { sessionId, userId, title, updated: rowCount });
+  return (rowCount ?? 0) > 0;
+}
+
+export async function deleteSession(
+  sessionId: string,
+  userId: string
+): Promise<boolean> {
+  const { rowCount } = await pool.query(
+    `DELETE FROM chat_sessions WHERE id = $1 AND user_id = $2`,
+    [sessionId, userId]
+  );
+  log.info(`Session deleted`, { sessionId, userId, deleted: rowCount });
+  return (rowCount ?? 0) > 0;
+}
+
+export async function countSessionMessages(sessionId: string): Promise<number> {
+  const { rows } = await pool.query(
+    `SELECT COUNT(*)::int AS cnt FROM chat_messages WHERE session_id = $1`,
+    [sessionId]
+  );
+  return rows[0]?.cnt || 0;
+}
+
+export async function getSessionTitle(sessionId: string): Promise<string | null> {
+  const { rows } = await pool.query(
+    `SELECT title FROM chat_sessions WHERE id = $1`,
+    [sessionId]
+  );
+  return rows[0]?.title || null;
+}
+
 export async function logIngestedDocument(
   filename: string,
   chunkCount: number
