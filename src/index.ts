@@ -15,7 +15,7 @@ const log = createLogger("server");
 const app = express();
 
 app.use(helmet());
-app.use(cors());
+app.use(cors({ origin: "*", methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], allowedHeaders: "*" }));
 app.use(requestLogger);
 app.use(express.json({ limit: "10mb" }));
 
