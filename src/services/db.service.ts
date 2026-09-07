@@ -43,12 +43,14 @@ export async function ensureSession(
     log.debug(`ensureSession skipped (exists)`, { sessionId, userId });
     return;
   }
-  const { rows } = await pool.query(
-    `SELECT COUNT(*) AS cnt FROM chat_sessions WHERE user_id = $1`,
-    [userId]
-  );
-  const count = parseInt(rows[0].cnt, 10) + 1;
-  const title = `New Chat ${count}`;
+  const now = new Date();
+  const dd = String(now.getDate()).padStart(2, "0");
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const yyyy = now.getFullYear();
+  const hh = now.getHours();
+  const min = String(now.getMinutes()).padStart(2, "0");
+  const ss = String(now.getSeconds()).padStart(2, "0");
+  const title = `New Chat ${dd}-${mm}-${yyyy} ${hh}:${min}:${ss}`;
   await pool.query(
     `INSERT INTO chat_sessions (id, user_id, title) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING`,
     [sessionId, userId, title]
