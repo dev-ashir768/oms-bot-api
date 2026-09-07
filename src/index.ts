@@ -6,6 +6,7 @@ import { loadIndex } from "./services/faiss.service.js";
 import { getKeyPoolStatus } from "./services/gemini.service.js";
 import { errorHandler } from "./middlewares/error-handler.js";
 import { requestLogger } from "./middlewares/request-logger.js";
+import { apiKeyAuth } from "./middlewares/auth.js";
 import { createLogger } from "./utils/logger.js";
 import chatRoutes from "./routes/chat.routes.js";
 import ingestRoutes from "./routes/ingest.routes.js";
@@ -20,6 +21,7 @@ app.use(cors({ origin: "*", methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "
 app.use(requestLogger);
 app.use(express.json({ limit: "10mb" }));
 
+app.use("/api", apiKeyAuth);
 app.use("/api/chat", chatRoutes);
 app.use("/api/rag/ingest", ingestRoutes);
 

@@ -24,6 +24,7 @@ export const config = {
   trackingApiUrl: process.env.TRACKING_API_URL || "https://getorio.com/api/universal_tracking",
   botName: process.env.BOT_NAME || "OMS Assistant",
   systemPrompt: process.env.SYSTEM_PROMPT || "",
+  apiKey: process.env.API_KEY || "",
 } as const;
 
 const required = ["databaseUrl", "geminiApiKey"] as const;

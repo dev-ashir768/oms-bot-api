@@ -2,13 +2,25 @@
   "info": {
     "name": "OMS Bot - RAG API",
     "_postman_id": "oms-bot-rag-api",
-    "description": "RAG Backend API with PDF ingestion, chat with caching/streaming, tracking, session management, multi-key rotation, and rate limiting",
+    "description": "RAG Backend API with PDF ingestion, chat with caching/streaming, tracking, session management, multi-key rotation, rate limiting, and API key auth",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      { "key": "key", "value": "X-API-Key" },
+      { "key": "value", "value": "{{apiKey}}" },
+      { "key": "in", "value": "header" }
+    ]
   },
   "variable": [
     {
       "key": "baseUrl",
       "value": "http://localhost:8001"
+    },
+    {
+      "key": "apiKey",
+      "value": "your-api-key-here"
     },
     {
       "key": "userId",
@@ -26,6 +38,7 @@
   "item": [
     {
       "name": "Health",
+      "auth": { "type": "noauth" },
       "item": [
         {
           "name": "Health Check",
