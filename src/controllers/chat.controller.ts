@@ -87,7 +87,7 @@ If you need immediate assistance, feel free to reach out to our support team:
 - WhatsApp: 0318-0268894
 - Email: info@getorio.com
 - Phone: 021-37293292
-- Website: https://getorio.com`;
+- Website: getorio.com`;
 
 function safeSaveMessage(userId: string, sessionId: string, sender: "user" | "model", content: string): void {
   ensureUser(userId)
