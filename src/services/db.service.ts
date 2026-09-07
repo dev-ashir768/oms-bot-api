@@ -35,11 +35,25 @@ export async function ensureSession(
   userId: string
 ): Promise<void> {
   const start = Date.now();
-  await pool.query(
-    `INSERT INTO chat_sessions (id, user_id) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING`,
-    [sessionId, userId]
+  const { rowCount } = await pool.query(
+    `SELECT 1 FROM chat_sessions WHERE id = $1`,
+    [sessionId]
   );
-  log.debug(`ensureSession completed`, { sessionId, userId, duration: Date.now() - start });
+  if (rowCount && rowCount > 0) {
+    log.debug(`ensureSession skipped (exists)`, { sessionId, userId });
+    return;
+  }
+  const { rows } = await pool.query(
+    `SELECT COUNT(*) AS cnt FROM chat_sessions WHERE user_id = $1`,
+    [userId]
+  );
+  const count = parseInt(rows[0].cnt, 10) + 1;
+  const title = `New Chat ${count}`;
+  await pool.query(
+    `INSERT INTO chat_sessions (id, user_id, title) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING`,
+    [sessionId, userId, title]
+  );
+  log.debug(`ensureSession completed`, { sessionId, userId, title, duration: Date.now() - start });
 }
 
 export async function getRecentHistory(
