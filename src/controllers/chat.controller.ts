@@ -57,7 +57,9 @@ function formatHistoryReply(messages: ChatMessage[], name: string | null): strin
 
   const formatted = messages.map((m) => {
     const label = m.sender === "user" ? "🧑 You" : `🤖 ${config.botName}`;
-    const time = m.created_at ? new Date(m.created_at).toLocaleString("en-PK") : "";
+    const time = m.created_at
+      ? new Date(m.created_at).toLocaleString("en-PK", { timeZone: "Asia/Karachi" })
+      : "";
     const content = m.content.length > 200 ? m.content.substring(0, 200) + "..." : m.content;
     return `${label}${time ? ` (${time})` : ""}:\n${content}`;
   });
@@ -77,8 +79,8 @@ function formatSessionsReply(sessions: ChatSession[], name: string | null): stri
     : `You have a total of ${sessions.length} session(s):\n\n`;
 
   const formatted = sessions.map((s, i) => {
-    const created = new Date(s.created_at).toLocaleString("en-PK");
-    const updated = new Date(s.updated_at).toLocaleString("en-PK");
+    const created = new Date(s.created_at).toLocaleString("en-PK", { timeZone: "Asia/Karachi" });
+    const updated = new Date(s.updated_at).toLocaleString("en-PK", { timeZone: "Asia/Karachi" });
     return `${i + 1}. **${s.title || s.id}**\n   - Started: ${created}\n   - Last active: ${updated}`;
   });
 
