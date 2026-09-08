@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["/Users/ashirarif/bots/oms-bot/src/routes/ingest.routes.ts"],
+  "sourcesContent": ["import { Router } from \"express\";\nimport { z } from \"zod\";\nimport { validate } from \"../middlewares/validate.js\";\nimport { uploadPdf } from \"../middlewares/upload.js\";\nimport {\n  handleIngestText,\n  handleIngestPdf,\n  handleIndexStats,\n} from \"../controllers/ingest.controller.js\";\n\nconst router = Router();\n\nconst ingestTextSchema = z.object({\n  documents: z\n    .array(z.string().min(1, \"Each document must be a non-empty string\"))\n    .min(1, \"At least one document is required\"),\n});\n\nrouter.post(\"/text\", validate(ingestTextSchema), handleIngestText);\nrouter.post(\"/pdf\", uploadPdf, handleIngestPdf);\nrouter.get(\"/stats\", handleIndexStats);\n\nexport default router;\n"],
+  "mappings": "AAAA,SAAS,cAAc;AACvB,SAAS,SAAS;AAClB,SAAS,gBAAgB;AACzB,SAAS,iBAAiB;AAC1B;AAAA,EACE;AAAA,EACA;AAAA,EACA;AAAA,OACK;AAEP,MAAM,SAAS,OAAO;AAEtB,MAAM,mBAAmB,EAAE,OAAO;AAAA,EAChC,WAAW,EACR,MAAM,EAAE,OAAO,EAAE,IAAI,GAAG,0CAA0C,CAAC,EACnE,IAAI,GAAG,mCAAmC;AAC/C,CAAC;AAED,OAAO,KAAK,SAAS,SAAS,gBAAgB,GAAG,gBAAgB;AACjE,OAAO,KAAK,QAAQ,WAAW,eAAe;AAC9C,OAAO,IAAI,UAAU,gBAAgB;AAErC,IAAO,wBAAQ;",
+  "names": []
+}

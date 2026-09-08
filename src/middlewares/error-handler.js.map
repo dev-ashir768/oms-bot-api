@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["/Users/ashirarif/bots/oms-bot/src/middlewares/error-handler.ts"],
+  "sourcesContent": ["import type { Request, Response, NextFunction } from \"express\";\nimport { createLogger } from \"../utils/logger.js\";\n\nconst log = createLogger(\"error-handler\");\n\nexport function errorHandler(\n  err: Error,\n  req: Request,\n  res: Response,\n  _next: NextFunction\n): void {\n  log.error(`Unhandled error on ${req.method} ${req.originalUrl}`, {\n    requestId: req.requestId,\n    error: err,\n  });\n\n  res.status(500).json({\n    error: \"Internal server error\",\n    ...(process.env.NODE_ENV !== \"production\" && { message: err.message }),\n  });\n}\n"],
+  "mappings": "AACA,SAAS,oBAAoB;AAE7B,MAAM,MAAM,aAAa,eAAe;AAEjC,SAAS,aACd,KACA,KACA,KACA,OACM;AACN,MAAI,MAAM,sBAAsB,IAAI,MAAM,IAAI,IAAI,WAAW,IAAI;AAAA,IAC/D,WAAW,IAAI;AAAA,IACf,OAAO;AAAA,EACT,CAAC;AAED,MAAI,OAAO,GAAG,EAAE,KAAK;AAAA,IACnB,OAAO;AAAA,IACP,GAAI,QAAQ,IAAI,aAAa,gBAAgB,EAAE,SAAS,IAAI,QAAQ;AAAA,EACtE,CAAC;AACH;",
+  "names": []
+}

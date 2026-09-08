@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["/Users/ashirarif/bots/oms-bot/src/middlewares/validate.ts"],
+  "sourcesContent": ["import type { Request, Response, NextFunction } from \"express\";\nimport { ZodSchema, ZodError } from \"zod\";\nimport { createLogger } from \"../utils/logger.js\";\n\nconst log = createLogger(\"validation\");\n\nexport function validate(schema: ZodSchema) {\n  return (req: Request, res: Response, next: NextFunction): void => {\n    try {\n      req.body = schema.parse(req.body);\n      next();\n    } catch (err) {\n      if (err instanceof ZodError) {\n        const details = err.errors.map((e) => ({\n          field: e.path.join(\".\"),\n          message: e.message,\n        }));\n        log.warn(`Validation failed on ${req.method} ${req.originalUrl}`, {\n          requestId: req.requestId,\n          errors: details,\n        });\n        res.status(400).json({ error: \"Validation failed\", details });\n        return;\n      }\n      next(err);\n    }\n  };\n}\n"],
+  "mappings": "AACA,SAAoB,gBAAgB;AACpC,SAAS,oBAAoB;AAE7B,MAAM,MAAM,aAAa,YAAY;AAE9B,SAAS,SAAS,QAAmB;AAC1C,SAAO,CAAC,KAAc,KAAe,SAA6B;AAChE,QAAI;AACF,UAAI,OAAO,OAAO,MAAM,IAAI,IAAI;AAChC,WAAK;AAAA,IACP,SAAS,KAAK;AACZ,UAAI,eAAe,UAAU;AAC3B,cAAM,UAAU,IAAI,OAAO,IAAI,CAAC,OAAO;AAAA,UACrC,OAAO,EAAE,KAAK,KAAK,GAAG;AAAA,UACtB,SAAS,EAAE;AAAA,QACb,EAAE;AACF,YAAI,KAAK,wBAAwB,IAAI,MAAM,IAAI,IAAI,WAAW,IAAI;AAAA,UAChE,WAAW,IAAI;AAAA,UACf,QAAQ;AAAA,QACV,CAAC;AACD,YAAI,OAAO,GAAG,EAAE,KAAK,EAAE,OAAO,qBAAqB,QAAQ,CAAC;AAC5D;AAAA,MACF;AACA,WAAK,GAAG;AAAA,IACV;AAAA,EACF;AACF;",
+  "names": []
+}

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["/Users/ashirarif/bots/oms-bot/src/utils/pdf-parser.ts"],
+  "sourcesContent": ["import fs from \"fs\";\n\nexport async function extractTextFromPdf(filePath: string): Promise<string> {\n  // Import the inner module directly to avoid pdf-parse's test file read bug\n  const { default: pdfParse } = await import(\"pdf-parse/lib/pdf-parse.js\");\n  const buffer = fs.readFileSync(filePath);\n  const data = await pdfParse(buffer);\n  return data.text;\n}\n"],
+  "mappings": "AAAA,OAAO,QAAQ;AAEf,eAAsB,mBAAmB,UAAmC;AAE1E,QAAM,EAAE,SAAS,SAAS,IAAI,MAAM,OAAO,4BAA4B;AACvE,QAAM,SAAS,GAAG,aAAa,QAAQ;AACvC,QAAM,OAAO,MAAM,SAAS,MAAM;AAClC,SAAO,KAAK;AACd;",
+  "names": []
+}
