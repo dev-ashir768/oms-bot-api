@@ -14,7 +14,7 @@ import {
 } from "../services/db.service.js";
 import { searchSimilar } from "../services/faiss.service.js";
 import { generateResponse, generateResponseStream, generateEmbedding, translateForSearch } from "../services/gemini.service.js";
-import { findCachedResponse, saveToCache } from "../services/cache.service.js";
+import { findCachedResponse, saveToCache, clearResponseCache } from "../services/cache.service.js";
 import { isTrackingQuery, extractConsignmentNumber, trackConsignment } from "../services/tracking.service.js";
 import { createLogger } from "../utils/logger.js";
 import { config } from "../config/env.js";
@@ -588,5 +588,25 @@ export async function handleChatStream(req: Request, res: Response): Promise<voi
     sseSend(res, "chunk", { text: FALLBACK_RESPONSE });
     sseSend(res, "done", { source: "fallback", responseTime: Date.now() - start });
     res.end();
+  }
+}
+
+export async function handleClearCache(
+  req: Request,
+  res: Response
+): Promise<void> {
+  const start = Date.now();
+  log.info(`Clear response cache requested`, { ip: req.ip, requestId: req.requestId });
+
+  try {
+    const deletedCount = await clearResponseCache();
+    res.json({
+      message: "Response cache cleared successfully.",
+      deletedCount,
+      duration: Date.now() - start,
+    });
+  } catch (err) {
+    log.error(`Clear cache failed`, { error: err });
+    res.status(500).json({ error: "Failed to clear response cache." });
   }
 }

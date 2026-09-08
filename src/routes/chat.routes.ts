@@ -9,6 +9,7 @@ import {
   handleSessions,
   handleUpdateSession,
   handleDeleteSession,
+  handleClearCache,
 } from "../controllers/chat.controller.js";
 
 const router = Router();
@@ -33,6 +34,8 @@ const updateSessionSchema = z.object({
 
 router.post("/", chatRateLimit, validate(chatSchema), handleChat);
 router.post("/stream", chatRateLimit, validate(chatSchema), handleChatStream);
+router.delete("/cache", handleClearCache);
+router.post("/cache/clear", handleClearCache);
 router.get("/history/:userId/:sessionId", handleHistory);
 router.get("/sessions/:userId", handleSessions);
 router.patch("/sessions/:sessionId", validate(updateSessionSchema), handleUpdateSession);

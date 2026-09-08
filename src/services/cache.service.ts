@@ -96,11 +96,32 @@ export async function findCachedResponse(
   return null;
 }
 
+function shouldCacheResponse(response: string): boolean {
+  if (!response || response.trim().length < 20) return false;
+  const lower = response.toLowerCase();
+  // Do NOT cache generic fallbacks or support redirects
+  if (
+    lower.includes("something went wrong") ||
+    lower.includes("reach out to our support team") ||
+    lower.includes("contact our support team") ||
+    lower.includes("0318-0268894") ||
+    lower.includes("info@getorio.com")
+  ) {
+    return false;
+  }
+  return true;
+}
+
 export async function saveToCache(
   question: string,
   questionEmbedding: number[],
   response: string
 ): Promise<void> {
+  if (!shouldCacheResponse(response)) {
+    log.debug(`Skipping cache for redirect/fallback response`, { question: question.slice(0, 40) });
+    return;
+  }
+
   const normalized = normalize(question);
   const embeddingBuf = embeddingToBuffer(questionEmbedding);
 
@@ -109,4 +130,10 @@ export async function saveToCache(
     [normalized, embeddingBuf, response]
   );
   log.debug(`Response cached`, { question: question.slice(0, 60) });
+}
+
+export async function clearResponseCache(): Promise<number> {
+  const res = await pool.query(`DELETE FROM response_cache`);
+  log.warn(`Response cache cleared`, { deletedCount: res.rowCount });
+  return res.rowCount || 0;
 }
