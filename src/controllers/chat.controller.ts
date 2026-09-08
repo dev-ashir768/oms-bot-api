@@ -13,7 +13,7 @@ import {
   getSessionTitle,
 } from "../services/db.service.js";
 import { searchSimilar } from "../services/faiss.service.js";
-import { generateResponse, generateResponseStream, generateEmbedding } from "../services/gemini.service.js";
+import { generateResponse, generateResponseStream, generateEmbedding, translateForSearch } from "../services/gemini.service.js";
 import { findCachedResponse, saveToCache } from "../services/cache.service.js";
 import { isTrackingQuery, extractConsignmentNumber, trackConsignment } from "../services/tracking.service.js";
 import { createLogger } from "../utils/logger.js";
@@ -244,9 +244,10 @@ export async function handleChat(req: Request, res: Response): Promise<void> {
     let ragResults: Awaited<ReturnType<typeof searchSimilar>> = [];
 
     try {
+      const searchQuery = await translateForSearch(message);
       const results = await Promise.allSettled([
         getRecentHistory(sessionId),
-        searchSimilar(message),
+        searchSimilar(searchQuery),
       ]);
 
       if (results[0].status === "fulfilled") history = results[0].value;
@@ -527,7 +528,8 @@ export async function handleChatStream(req: Request, res: Response): Promise<voi
     let history: Awaited<ReturnType<typeof getRecentHistory>> = [];
     let ragResults: Awaited<ReturnType<typeof searchSimilar>> = [];
 
-    const results = await Promise.allSettled([getRecentHistory(sessionId), searchSimilar(message)]);
+    const searchQuery = await translateForSearch(message);
+    const results = await Promise.allSettled([getRecentHistory(sessionId), searchSimilar(searchQuery)]);
     if (results[0].status === "fulfilled") history = results[0].value;
     if (results[1].status === "fulfilled") ragResults = results[1].value;
 

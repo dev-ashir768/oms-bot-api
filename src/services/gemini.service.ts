@@ -227,6 +227,62 @@ export async function* generateResponseStream(
   }
 }
 
+const translationCache = new Map<string, string>();
+const TRANSLATION_CACHE_MAX = 500;
+
+function isLikelyEnglish(text: string): boolean {
+  const t = text.trim();
+  if (t.length === 0) return true;
+
+  const urduRegex = /[؀-ۿ]/;
+  if (urduRegex.test(t)) return false;
+
+  const romanUrduMarkers = /\b(hai|hain|kya|kaise|kaisa|kitne|kitna|mera|meri|mere|aap|tum|kar|karo|karna|nahi|nhi|q|kn|kn kn|ky|ma|mein|sa|se|ka|ki|ke|ko|pe|par|tw|to|phr|phir|jab|jo|kaha|kahan|abhi|bhi|ho|hoga|hogi|batao|dikhao|dena|de|do|hun|hu|liye|paani|thora|bohat|zyada|bilkul|acha|thik|theek|chal|chalo|dekh|dekho|sunno|kuch|sab|sabhi|har|koi|aur|ya|magar|lekin|agar|jise|jisay|iske|iski|iska|uska|uski|uske)\b/i;
+
+  if (romanUrduMarkers.test(t)) return false;
+  return true;
+}
+
+export async function translateForSearch(text: string): Promise<string> {
+  if (isLikelyEnglish(text)) return text;
+
+  const cached = translationCache.get(text);
+  if (cached) {
+    log.debug(`Translation cache hit`, { original: text.slice(0, 40) });
+    return cached;
+  }
+
+  const start = Date.now();
+  const prompt = `Translate the following question to concise English keywords suitable for a knowledge base search. Reply with ONLY the translated text, no explanation, no punctuation, no quotes.
+
+Question: ${text}
+
+English:`;
+
+  try {
+    const translated = await withRotation(async (client) => {
+      const result = await client.chatModel.generateContent(prompt);
+      return result.response.text().trim().replace(/^["']|["']$/g, "");
+    }, "translateForSearch");
+
+    if (translationCache.size >= TRANSLATION_CACHE_MAX) {
+      const firstKey = translationCache.keys().next().value;
+      if (firstKey) translationCache.delete(firstKey);
+    }
+    translationCache.set(text, translated);
+
+    log.info(`Query translated for search`, {
+      original: text.slice(0, 60),
+      translated: translated.slice(0, 60),
+      duration: Date.now() - start,
+    });
+    return translated;
+  } catch (err) {
+    log.warn(`Translation failed, using original`, { text: text.slice(0, 40), error: err });
+    return text;
+  }
+}
+
 export function getKeyPoolStatus(): Array<{ index: number; masked: string; cooldownRemaining: number; failCount: number }> {
   const now = Date.now();
   return pool.map((k) => ({
