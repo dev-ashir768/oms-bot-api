@@ -152,12 +152,7 @@ export async function trackConsignment(cn: string): Promise<string> {
       if (details.length > 5) {
         lines.push(`• ... aur ${details.length - 5} purani updates`);
       }
-    }
-
-    lines.push(
-      ``,
-      `Koi aur sawaal ho to poochein! 😊`
-    );
+    };
 
     return lines.join("\n");
   } catch (err) {
