@@ -20,7 +20,7 @@ export const config = {
   maxOutputTokens: parseInt(process.env.MAX_OUTPUT_TOKENS || "1000", 10),
   embeddingModel: process.env.GEMINI_EMBEDDING_MODEL || "gemini-embedding-001",
   chatModel: process.env.GEMINI_CHAT_MODEL || "gemini-3.5-flash-lite",
-  embeddingDimension: parseInt(process.env.EMBEDDING_DIMENSION || "768", 10),
+  embeddingDimension: parseInt(process.env.EMBEDDING_DIMENSION || "3072", 10),
   maxFileSizeMb: parseInt(process.env.MAX_FILE_SIZE_MB || "20", 10),
   uploadDir: process.env.UPLOAD_DIR || "./data/uploads",
   cacheSimilarityThreshold: parseFloat(process.env.CACHE_SIMILARITY_THRESHOLD || "0.88"),
