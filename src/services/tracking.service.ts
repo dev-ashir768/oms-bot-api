@@ -22,6 +22,17 @@ interface TrackingResponse {
 }
 
 export function extractConsignmentNumber(message: string): string | null {
+  // Check explicit labels like "cn: 12345", "cn# 12345", "consignment: 12345", "tracking: 12345"
+  const explicitMatch = message.match(
+    /\b(?:cn|consignment(?:\s*no|\s*number)?|tracking(?:\s*no|\s*number|\s*id)?)\s*[:#=\-]?\s*([A-Z0-9\-]{6,25})\b/i
+  );
+  if (explicitMatch && explicitMatch[1]) {
+    const raw = explicitMatch[1].replace(/^-+|-+$/g, "");
+    if (raw.length >= 6 && /\d/.test(raw)) {
+      return raw.toUpperCase();
+    }
+  }
+
   const cleaned = message.replace(/["""''`]/g, "").replace(/\s+/g, " ");
 
   const patterns = [
@@ -35,38 +46,48 @@ export function extractConsignmentNumber(message: string): string | null {
 
   for (const pattern of patterns) {
     const match = cleaned.match(pattern);
-    if (match) return match[1].toUpperCase();
+    if (match) {
+      let result = match[1].toUpperCase();
+      if (result.startsWith("CN-") && result.length > 5) {
+        result = result.substring(3);
+      }
+      return result;
+    }
   }
 
   return null;
 }
 
 export function isTrackingQuery(message: string): boolean {
-  const lower = message.toLowerCase().replace(/[^\w\s]/g, " ");
+  const hasCN = extractConsignmentNumber(message) !== null;
+  if (!hasCN) return false;
 
-  const trackingKeywords = [
-    "track", "tracking", "parcel", "shipment", "courier",
-    "consignment", "cn number", "cn no", "order track",
-    "delivery status", "delivery update",
-    "where is my", "track my", "check my", "find my",
+  const trimmed = message.trim();
+
+  // If the message is short and has a CN (e.g. "KI7539148668", "CN: KI7539148668", "track KI7539148668")
+  if (trimmed.length <= 40) {
+    return true;
+  }
+
+  const lower = message.toLowerCase();
+
+  // Words that strongly indicate tracking intent when a CN is present
+  const trackingWordsRegex =
+    /\b(cn|c\/n|track|tracking|tracked|trace|status|check|parcel|shipment|courier|consignment|delivery|deliver|delivered|order|update|updates|history|detail|details|info|location|kahan|kaha|kidhar|kidhr|kab|pohanch|pohancho|pahunch|pahuncha|pohncha|batao|batau|batayein|bataen|dikhao|dikhado|dikhayein|search|find|where)\b/i;
+
+  if (trackingWordsRegex.test(lower)) {
+    return true;
+  }
+
+  const trackingPhrases = [
     "mera order", "mera parcel", "meri shipment", "meri delivery",
     "kahan hai", "kahan ha", "kaha hai", "kaha ha",
     "kidhar hai", "kidhar ha", "kidhr hai", "kidhr ha",
     "parcel kab", "order kab", "kab deliver", "kab aye ga", "kab ayega",
-    "konsa status", "kya status",
+    "konsa status", "kya status", "ka status",
   ];
 
-  const hasKeyword = trackingKeywords.some((k) => lower.includes(k));
-  const hasCN = extractConsignmentNumber(message) !== null;
-
-  // If message has CN + keyword -> tracking
-  if (hasKeyword && hasCN) return true;
-
-  // If message is JUST a CN number (user directly pasted it) -> also tracking
-  const trimmed = message.trim();
-  if (hasCN && trimmed.replace(/[\s\-]/g, "").length <= 25) return true;
-
-  return false;
+  return trackingPhrases.some((phrase) => lower.includes(phrase));
 }
 
 async function fetchWithRetry(cn: string, retries = 2): Promise<TrackingResponse> {
@@ -137,11 +158,18 @@ export async function trackConsignment(cn: string): Promise<string> {
     const lines: string[] = [
       `📦 **Tracking Details**`,
       ``,
-      `**Courier:** ${payload.courier}`,
-      `**CN Number:** ${payload.consignment_number}`,
+      `**Courier:** ${payload.courier || "N/A"}`,
+      `**CN Number:** ${payload.consignment_number || cn}`,
       `**Current Status:** ${latest?.status || "Processing"}`,
       `**Last Updated:** ${latest?.dateTime || "N/A"}`,
     ];
+
+    if (latest?.status && /no record found/i.test(latest.status)) {
+      lines.push(
+        ``,
+        `⚠️ *Courier system par is CN ka record abhi update nahi hua. Agar shipment abhi book hui hai to thori der baad dobara check karein, ya CN number verify kar lein.*`
+      );
+    }
 
     if (details.length > 1) {
       lines.push(``, `**Tracking History:**`);
@@ -152,7 +180,7 @@ export async function trackConsignment(cn: string): Promise<string> {
       if (details.length > 5) {
         lines.push(`• ... aur ${details.length - 5} purani updates`);
       }
-    };
+    }
 
     return lines.join("\n");
   } catch (err) {
