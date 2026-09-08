@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
-import { ingestDocuments, getIndexStats } from "../services/faiss.service.js";
+import { ingestDocuments, getIndexStats, resetIndex } from "../services/faiss.service.js";
 import { logIngestedDocument } from "../services/db.service.js";
+import pool from "../db/pool.js";
 import { extractTextFromPdf } from "../utils/pdf-parser.js";
 import { chunkText } from "../utils/chunker.js";
 import { createLogger } from "../utils/logger.js";
@@ -104,4 +105,32 @@ export async function handleIndexStats(
   log.debug(`Index stats requested`, { requestId: req.requestId });
   const stats = getIndexStats();
   res.json(stats);
+}
+
+export async function handleResetIndex(
+  req: Request,
+  res: Response
+): Promise<void> {
+  const start = Date.now();
+  log.warn(`FAISS reset requested`, { ip: req.ip, requestId: req.requestId });
+
+  try {
+    const { previousCount } = resetIndex();
+    await pool.query(`DELETE FROM ingested_documents`);
+
+    log.warn(`FAISS index and ingested_documents log cleared`, {
+      previousCount,
+      duration: Date.now() - start,
+      requestId: req.requestId,
+    });
+
+    res.json({
+      message: "Knowledge base reset successfully.",
+      previousDocumentCount: previousCount,
+      currentDocumentCount: 0,
+    });
+  } catch (err) {
+    log.error(`Reset failed`, { duration: Date.now() - start, error: err });
+    res.status(500).json({ error: "Failed to reset knowledge base." });
+  }
 }

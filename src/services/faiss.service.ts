@@ -95,6 +95,21 @@ export async function searchSimilar(
   return results;
 }
 
+export function resetIndex(): { previousCount: number } {
+  const previousCount = documents.length;
+  log.warn(`Resetting FAISS index`, { previousCount });
+
+  index = new IndexFlatL2(config.embeddingDimension);
+  documents = [];
+
+  ensureDir();
+  if (fs.existsSync(INDEX_FILE)) fs.unlinkSync(INDEX_FILE);
+  if (fs.existsSync(DOCS_FILE)) fs.unlinkSync(DOCS_FILE);
+
+  log.info(`FAISS index reset complete`, { previousCount });
+  return { previousCount };
+}
+
 export function getIndexStats(): { totalDocuments: number } {
   const total = index ? index.ntotal() : 0;
   log.debug(`Index stats requested`, { totalDocuments: total });

@@ -6,6 +6,7 @@ import {
   handleIngestText,
   handleIngestPdf,
   handleIndexStats,
+  handleResetIndex,
 } from "../controllers/ingest.controller.js";
 
 const router = Router();
@@ -19,5 +20,6 @@ const ingestTextSchema = z.object({
 router.post("/text", validate(ingestTextSchema), handleIngestText);
 router.post("/pdf", uploadPdf, handleIngestPdf);
 router.get("/stats", handleIndexStats);
+router.delete("/reset", handleResetIndex);
 
 export default router;

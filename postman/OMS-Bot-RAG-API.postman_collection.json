@@ -163,6 +163,25 @@
               ]
             }
           }
+        },
+        {
+          "name": "Reset Knowledge Base (⚠️ Deletes All)",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/rag/ingest/reset",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "rag",
+                "ingest",
+                "reset"
+              ]
+            },
+            "description": "⚠️ DESTRUCTIVE. Clears the entire FAISS index and ingested_documents log. All previously ingested PDFs/text will be gone — you'll need to re-ingest. Protected by API key auth."
+          }
         }
       ]
     },
