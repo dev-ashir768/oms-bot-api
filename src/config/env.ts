@@ -19,7 +19,7 @@ export const config = {
   ragChunkMaxChars: parseInt(process.env.RAG_CHUNK_MAX_CHARS || "500", 10),
   maxOutputTokens: parseInt(process.env.MAX_OUTPUT_TOKENS || "512", 10),
   embeddingModel: process.env.GEMINI_EMBEDDING_MODEL || "gemini-embedding-001",
-  chatModel: process.env.GEMINI_CHAT_MODEL || "gemini-3.6-flash",
+  chatModel: process.env.GEMINI_CHAT_MODEL || "gemini-1.5-flash-8b",
   embeddingDimension: parseInt(process.env.EMBEDDING_DIMENSION || "768", 10),
   maxFileSizeMb: parseInt(process.env.MAX_FILE_SIZE_MB || "20", 10),
   uploadDir: process.env.UPLOAD_DIR || "./data/uploads",
