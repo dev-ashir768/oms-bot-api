@@ -93,12 +93,13 @@ If you need immediate assistance, feel free to reach out to our support team:
 - Phone: 021-37293292
 - Website: getorio.com`;
 
-function safeSaveMessage(userId: string, sessionId: string, sender: "user" | "model", content: string): void {
+function safeSaveTurn(userId: string, sessionId: string, userMessage: string, modelReply: string): void {
   ensureUser(userId)
     .then(() => ensureSession(sessionId, userId))
-    .then(() => saveMessage(sessionId, sender, content))
+    .then(() => saveMessage(sessionId, "user", userMessage))
+    .then(() => saveMessage(sessionId, "model", modelReply))
     .catch((err) => {
-      log.error(`Background message save failed (non-blocking)`, { sessionId, sender, error: err });
+      log.error(`Background turn save failed (non-blocking)`, { sessionId, error: err });
     });
 }
 
@@ -157,8 +158,7 @@ export async function handleChat(req: Request, res: Response): Promise<void> {
 
       const reply = await trackConsignment(cn);
 
-      safeSaveMessage(userId, sessionId, "user", message);
-      safeSaveMessage(userId, sessionId, "model", reply);
+      safeSaveTurn(userId, sessionId, message, reply);
 
       log.info(`Tracking response sent`, { cn, source: "tracking_api", duration: Date.now() - start });
 
@@ -181,8 +181,7 @@ export async function handleChat(req: Request, res: Response): Promise<void> {
         const sessions = await getUserSessions(userId);
         const reply = formatSessionsReply(sessions, resolvedName);
 
-        safeSaveMessage(userId, sessionId, "user", message);
-        safeSaveMessage(userId, sessionId, "model", reply);
+        safeSaveTurn(userId, sessionId, message, reply);
 
         log.info(`Sessions response sent`, { source: "sessions_db", sessionCount: sessions.length, duration: Date.now() - start });
 
@@ -200,8 +199,7 @@ export async function handleChat(req: Request, res: Response): Promise<void> {
         const messages = await getFullHistory(userId, sessionId);
         const reply = formatHistoryReply(messages, resolvedName);
 
-        safeSaveMessage(userId, sessionId, "user", message);
-        safeSaveMessage(userId, sessionId, "model", reply);
+        safeSaveTurn(userId, sessionId, message, reply);
 
         log.info(`History response sent`, { source: "history_db", messageCount: messages.length, duration: Date.now() - start });
 
@@ -219,8 +217,7 @@ export async function handleChat(req: Request, res: Response): Promise<void> {
 
       const cached = await findCachedResponse(message, questionEmbedding);
       if (cached) {
-        safeSaveMessage(userId, sessionId, "user", message);
-        safeSaveMessage(userId, sessionId, "model", cached.response);
+        safeSaveTurn(userId, sessionId, message, cached.response);
 
         log.info(`Serving cached response`, {
           similarity: cached.similarity.toFixed(4),
@@ -329,8 +326,7 @@ ${historyText}`;
       log.error(`AI generation failed, using fallback`, { error: err });
       reply = FALLBACK_RESPONSE;
 
-      safeSaveMessage(userId, sessionId, "user", message);
-      safeSaveMessage(userId, sessionId, "model", reply);
+      safeSaveTurn(userId, sessionId, message, reply);
 
       res.json({
         reply,
@@ -343,8 +339,7 @@ ${historyText}`;
     }
 
     // Save messages + cache (fire-and-forget, never block response)
-    safeSaveMessage(userId, sessionId, "user", message);
-    safeSaveMessage(userId, sessionId, "model", reply);
+    safeSaveTurn(userId, sessionId, message, reply);
 
     if (questionEmbedding) {
       saveToCache(message, questionEmbedding, reply).catch((err) => {
@@ -499,8 +494,7 @@ export async function handleChatStream(req: Request, res: Response): Promise<voi
       sseSend(res, "chunk", { text: reply });
       sseSend(res, "done", { source: "tracking_api", consignmentNumber: cn, responseTime: Date.now() - start });
 
-      safeSaveMessage(userId, sessionId, "user", message);
-      safeSaveMessage(userId, sessionId, "model", reply);
+      safeSaveTurn(userId, sessionId, message, reply);
       res.end();
       return;
     }
@@ -514,8 +508,7 @@ export async function handleChatStream(req: Request, res: Response): Promise<voi
         sseSend(res, "chunk", { text: reply });
         sseSend(res, "done", { source: "sessions_db", responseTime: Date.now() - start });
 
-        safeSaveMessage(userId, sessionId, "user", message);
-        safeSaveMessage(userId, sessionId, "model", reply);
+        safeSaveTurn(userId, sessionId, message, reply);
         res.end();
         return;
       } catch (err) {
@@ -532,8 +525,7 @@ export async function handleChatStream(req: Request, res: Response): Promise<voi
         sseSend(res, "chunk", { text: reply });
         sseSend(res, "done", { source: "history_db", responseTime: Date.now() - start });
 
-        safeSaveMessage(userId, sessionId, "user", message);
-        safeSaveMessage(userId, sessionId, "model", reply);
+        safeSaveTurn(userId, sessionId, message, reply);
         res.end();
         return;
       } catch (err) {
@@ -554,8 +546,7 @@ export async function handleChatStream(req: Request, res: Response): Promise<voi
           responseTime: Date.now() - start,
         });
 
-        safeSaveMessage(userId, sessionId, "user", message);
-        safeSaveMessage(userId, sessionId, "model", cached.response);
+        safeSaveTurn(userId, sessionId, message, cached.response);
         res.end();
         return;
       }
@@ -592,16 +583,14 @@ export async function handleChatStream(req: Request, res: Response): Promise<voi
       sseSend(res, "chunk", { text: fallback });
       sseSend(res, "done", { source: "fallback", responseTime: Date.now() - start });
 
-      safeSaveMessage(userId, sessionId, "user", message);
-      safeSaveMessage(userId, sessionId, "model", fallback);
+      safeSaveTurn(userId, sessionId, message, fallback);
       res.end();
       return;
     }
 
     sseSend(res, "done", { source: "ai", responseTime: Date.now() - start });
 
-    safeSaveMessage(userId, sessionId, "user", message);
-    safeSaveMessage(userId, sessionId, "model", fullReply);
+    safeSaveTurn(userId, sessionId, message, fullReply);
 
     if (questionEmbedding && fullReply) {
       saveToCache(message, questionEmbedding, fullReply).catch((err) => {
