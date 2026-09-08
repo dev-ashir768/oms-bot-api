@@ -230,56 +230,54 @@ export async function* generateResponseStream(
 const translationCache = new Map<string, string>();
 const TRANSLATION_CACHE_MAX = 500;
 
-function isLikelyEnglish(text: string): boolean {
-  const t = text.trim();
-  if (t.length === 0) return true;
-
-  const urduRegex = /[؀-ۿ]/;
-  if (urduRegex.test(t)) return false;
-
-  const romanUrduMarkers = /\b(hai|hain|hn|hyn|hein|he|h|kya|ky|kia|kaise|kaisa|kese|ksy|kaisay|kitne|kitna|kitny|kitni|kiutne|ktne|ktny|konsa|konse|konsi|kon|koun|q|kyun|kyo|kis|kisko|kiska|kiski|kiske|mera|meri|mere|aap|ap|tum|apka|apki|apke|apko|kar|karo|karna|kare|karein|kren|kr|kro|krna|nahi|nhi|nh|na|ma|mai|me|mein|men|m|sa|se|sy|ka|ki|ke|ko|k|pe|par|pr|tw|to|phr|phir|jab|jo|kaha|kahan|kha|khan|abhi|abh|bhi|bh|b|ho|hoga|hogi|honge|hoge|batao|bataiye|btayein|btao|bta|btado|dikhao|dekho|dekh|dena|de|do|dijye|hun|hu|hoon|liye|leye|lye|paani|thora|thoda|bohat|bht|zyada|zada|bilkul|acha|accha|thik|theek|thk|sahi|chal|chalo|sunno|suno|kuch|kch|sab|sabhi|har|koi|aur|ya|magar|lekin|lkn|agar|agr|jise|jisay|jisko|iske|iski|iska|isko|unka|unki|unke|unko|uska|uski|uske|usko|mujhe|mjhe|mjy|mujy|hume|humain|humein|sakta|sakte|sakti|skta|skte|skti|raha|rahe|rahi|rahay|hota|hote|hoti|hotay|wgera|waghera|shukriya|shukrya|wala|wali|wale|walay)\b/i;
-
-  if (romanUrduMarkers.test(t)) return false;
-  return true;
-}
-
 export async function translateForSearch(text: string): Promise<string> {
-  if (isLikelyEnglish(text)) return text;
+  const trimmed = text.trim();
+  if (!trimmed) return text;
 
-  const cached = translationCache.get(text);
+  const cacheKey = trimmed.toLowerCase();
+  const cached = translationCache.get(cacheKey);
   if (cached) {
-    log.debug(`Translation cache hit`, { original: text.slice(0, 40) });
+    log.debug(`Translation cache hit`, { original: trimmed.slice(0, 40), cached: cached.slice(0, 40) });
     return cached;
   }
 
   const start = Date.now();
-  const prompt = `Translate the following user question (which may be in Roman Urdu, Urdu, or mixed language) into a clear, descriptive English search query suitable for semantic vector search in an Order Management System (OMS) knowledge base. Preserve important domain entities (e.g. sidebar, menus, dashboard, orders, shipments, load sheets, tracking, settings, picklist, etc.). Reply with ONLY the translated English search query, no explanation, no punctuation, no quotes.
+  const prompt = `You are a search query optimizer for an Order Management System (OMS) documentation and knowledge base.
 
-User Question: ${text}
+Task: Convert the user's input into a concise, accurate English search query suitable for semantic vector retrieval.
+- The input may be in ANY language (Roman Urdu, Urdu script, Hindi, Arabic, English, or mixed slang) and may contain typos, abbreviations, or spelling mistakes.
+- Understand the user's true intent, fix any typos (e.g. "kiutne" -> "how many", "sibar" -> "sidebar", "ordr" -> "order", "shpmnt" -> "shipment"), and translate/rephrase it into clear English search terms.
+- Preserve key domain terms (e.g. sidebar, menus, dashboard, orders, shipments, load sheets, tracking, settings, picklist, 3PL, COD, rules, users).
+- If the input is already clean English, refine it into clear search terms.
+- Output ONLY the English search query. Do NOT add explanations, markdown, prefixes, quotes, or punctuation.
 
-English Search Query:`;
+User Input: ${trimmed}
+
+Search Query:`;
 
   try {
     const translated = await withRotation(async (client) => {
       const result = await client.chatModel.generateContent(prompt);
-      return result.response.text().trim().replace(/^["']|["']$/g, "");
+      return result.response.text().trim().replace(/^["'`]|["'`]$/g, "");
     }, "translateForSearch");
+
+    const optimized = translated || trimmed;
 
     if (translationCache.size >= TRANSLATION_CACHE_MAX) {
       const firstKey = translationCache.keys().next().value;
       if (firstKey) translationCache.delete(firstKey);
     }
-    translationCache.set(text, translated);
+    translationCache.set(cacheKey, optimized);
 
-    log.info(`Query translated for search`, {
-      original: text.slice(0, 60),
-      translated: translated.slice(0, 60),
+    log.info(`Query optimized for vector search`, {
+      original: trimmed.slice(0, 60),
+      optimized: optimized.slice(0, 60),
       duration: Date.now() - start,
     });
-    return translated;
+    return optimized;
   } catch (err) {
-    log.warn(`Translation failed, using original`, { text: text.slice(0, 40), error: err });
-    return text;
+    log.warn(`Query optimization failed, falling back to original`, { text: trimmed.slice(0, 40), error: err });
+    return trimmed;
   }
 }
 
