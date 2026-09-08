@@ -23,7 +23,7 @@ export const config = {
   embeddingDimension: parseInt(process.env.EMBEDDING_DIMENSION || "3072", 10),
   maxFileSizeMb: parseInt(process.env.MAX_FILE_SIZE_MB || "20", 10),
   uploadDir: process.env.UPLOAD_DIR || "./data/uploads",
-  cacheSimilarityThreshold: parseFloat(process.env.CACHE_SIMILARITY_THRESHOLD || "0.88"),
+  cacheSimilarityThreshold: parseFloat(process.env.CACHE_SIMILARITY_THRESHOLD || "0.96"),
   trackingApiUrl: process.env.TRACKING_API_URL || "https://getorio.com/api/universal_tracking",
   botName: process.env.BOT_NAME || "OMS Assistant",
   systemPrompt: process.env.SYSTEM_PROMPT || "",
