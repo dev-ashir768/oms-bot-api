@@ -8,15 +8,24 @@
   "auth": {
     "type": "apikey",
     "apikey": [
-      { "key": "key", "value": "X-API-Key" },
-      { "key": "value", "value": "{{apiKey}}" },
-      { "key": "in", "value": "header" }
+      {
+        "key": "key",
+        "value": "X-API-Key"
+      },
+      {
+        "key": "value",
+        "value": "{{apiKey}}"
+      },
+      {
+        "key": "in",
+        "value": "header"
+      }
     ]
   },
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:8001"
+      "value": "http://100.58.175.41:8000"
     },
     {
       "key": "apiKey",
@@ -38,7 +47,9 @@
   "item": [
     {
       "name": "Health",
-      "auth": { "type": "noauth" },
+      "auth": {
+        "type": "noauth"
+      },
       "item": [
         {
           "name": "Health Check",
