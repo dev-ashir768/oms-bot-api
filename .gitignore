@@ -3,3 +3,8 @@ dist/
 .env
 data/
 *.tsbuildinfo
+
+# Stray compiled files (should only ever exist in dist/)
+src/**/*.js
+src/**/*.js.map
+src/**/*.d.ts.map

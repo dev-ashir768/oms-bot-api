@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["/Users/ashirarif/bots/oms-bot/src/utils/chunker.ts"],
-  "sourcesContent": ["export function chunkText(\n  text: string,\n  chunkSize = 1000,\n  chunkOverlap = 200\n): string[] {\n  const chunks: string[] = [];\n  const cleanedText = text.replace(/\\s+/g, \" \").trim();\n\n  if (cleanedText.length <= chunkSize) {\n    return cleanedText.length > 0 ? [cleanedText] : [];\n  }\n\n  let start = 0;\n  while (start < cleanedText.length) {\n    let end = start + chunkSize;\n    if (end < cleanedText.length) {\n      const lastSpace = cleanedText.lastIndexOf(\" \", end);\n      if (lastSpace > start) end = lastSpace;\n    }\n    const chunk = cleanedText.slice(start, end).trim();\n    if (chunk.length > 0) chunks.push(chunk);\n    start = end - chunkOverlap;\n    if (start >= cleanedText.length) break;\n  }\n\n  return chunks;\n}\n"],
-  "mappings": "AAAO,SAAS,UACd,MACA,YAAY,KACZ,eAAe,KACL;AACV,QAAM,SAAmB,CAAC;AAC1B,QAAM,cAAc,KAAK,QAAQ,QAAQ,GAAG,EAAE,KAAK;AAEnD,MAAI,YAAY,UAAU,WAAW;AACnC,WAAO,YAAY,SAAS,IAAI,CAAC,WAAW,IAAI,CAAC;AAAA,EACnD;AAEA,MAAI,QAAQ;AACZ,SAAO,QAAQ,YAAY,QAAQ;AACjC,QAAI,MAAM,QAAQ;AAClB,QAAI,MAAM,YAAY,QAAQ;AAC5B,YAAM,YAAY,YAAY,YAAY,KAAK,GAAG;AAClD,UAAI,YAAY,MAAO,OAAM;AAAA,IAC/B;AACA,UAAM,QAAQ,YAAY,MAAM,OAAO,GAAG,EAAE,KAAK;AACjD,QAAI,MAAM,SAAS,EAAG,QAAO,KAAK,KAAK;AACvC,YAAQ,MAAM;AACd,QAAI,SAAS,YAAY,OAAQ;AAAA,EACnC;AAEA,SAAO;AACT;",
-  "names": []
-}

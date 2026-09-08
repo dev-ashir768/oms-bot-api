@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["/Users/ashirarif/bots/oms-bot/src/db/reset.ts"],
-  "sourcesContent": ["import pool from \"./pool.js\";\nimport { logger } from \"../utils/logger.js\";\n\nconst reset = `\nTRUNCATE TABLE chat_messages, response_cache, ingested_documents CASCADE;\nTRUNCATE TABLE chat_sessions CASCADE;\nTRUNCATE TABLE users CASCADE;\n`;\n\nasync function resetDatabase(): Promise<void> {\n  try {\n    logger.info(\"Resetting database...\");\n    await pool.query(reset);\n    logger.info(\"Database reset successfully. All data cleared, schema intact.\");\n  } catch (err) {\n    logger.error(\"Database reset failed\", err);\n    process.exit(1);\n  } finally {\n    await pool.end();\n  }\n}\n\nresetDatabase();\n"],
-  "mappings": "AAAA,OAAO,UAAU;AACjB,SAAS,cAAc;AAEvB,MAAM,QAAQ;AAAA;AAAA;AAAA;AAAA;AAMd,eAAe,gBAA+B;AAC5C,MAAI;AACF,WAAO,KAAK,uBAAuB;AACnC,UAAM,KAAK,MAAM,KAAK;AACtB,WAAO,KAAK,+DAA+D;AAAA,EAC7E,SAAS,KAAK;AACZ,WAAO,MAAM,yBAAyB,GAAG;AACzC,YAAQ,KAAK,CAAC;AAAA,EAChB,UAAE;AACA,UAAM,KAAK,IAAI;AAAA,EACjB;AACF;AAEA,cAAc;",
-  "names": []
-}

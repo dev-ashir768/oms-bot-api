@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["/Users/ashirarif/bots/oms-bot/src/middlewares/upload.ts"],
-  "sourcesContent": ["import multer from \"multer\";\nimport path from \"path\";\nimport fs from \"fs\";\nimport { config } from \"../config/env.js\";\n\nfs.mkdirSync(config.uploadDir, { recursive: true });\n\nconst storage = multer.diskStorage({\n  destination: (_req, _file, cb) => cb(null, config.uploadDir),\n  filename: (_req, file, cb) => {\n    const uniqueName = `${Date.now()}-${file.originalname}`;\n    cb(null, uniqueName);\n  },\n});\n\nexport const uploadPdf = multer({\n  storage,\n  limits: { fileSize: config.maxFileSizeMb * 1024 * 1024 },\n  fileFilter: (_req, file, cb) => {\n    if (path.extname(file.originalname).toLowerCase() === \".pdf\") {\n      cb(null, true);\n    } else {\n      cb(new Error(\"Only PDF files are allowed\"));\n    }\n  },\n}).single(\"file\");\n"],
-  "mappings": "AAAA,OAAO,YAAY;AACnB,OAAO,UAAU;AACjB,OAAO,QAAQ;AACf,SAAS,cAAc;AAEvB,GAAG,UAAU,OAAO,WAAW,EAAE,WAAW,KAAK,CAAC;AAElD,MAAM,UAAU,OAAO,YAAY;AAAA,EACjC,aAAa,CAAC,MAAM,OAAO,OAAO,GAAG,MAAM,OAAO,SAAS;AAAA,EAC3D,UAAU,CAAC,MAAM,MAAM,OAAO;AAC5B,UAAM,aAAa,GAAG,KAAK,IAAI,CAAC,IAAI,KAAK,YAAY;AACrD,OAAG,MAAM,UAAU;AAAA,EACrB;AACF,CAAC;AAEM,MAAM,YAAY,OAAO;AAAA,EAC9B;AAAA,EACA,QAAQ,EAAE,UAAU,OAAO,gBAAgB,OAAO,KAAK;AAAA,EACvD,YAAY,CAAC,MAAM,MAAM,OAAO;AAC9B,QAAI,KAAK,QAAQ,KAAK,YAAY,EAAE,YAAY,MAAM,QAAQ;AAC5D,SAAG,MAAM,IAAI;AAAA,IACf,OAAO;AACL,SAAG,IAAI,MAAM,4BAA4B,CAAC;AAAA,IAC5C;AAAA,EACF;AACF,CAAC,EAAE,OAAO,MAAM;",
-  "names": []
-}

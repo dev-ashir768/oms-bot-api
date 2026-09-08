@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["/Users/ashirarif/bots/oms-bot/src/db/pool.ts"],
-  "sourcesContent": ["import pg from \"pg\";\nimport { config } from \"../config/env.js\";\nimport { createLogger } from \"../utils/logger.js\";\n\nconst log = createLogger(\"postgres\");\n\nconst pool = new pg.Pool({\n  connectionString: config.databaseUrl,\n  max: 20,\n  idleTimeoutMillis: 30000,\n  connectionTimeoutMillis: 5000,\n});\n\npool.on(\"connect\", () => {\n  log.debug(\"New client connected to pool\");\n});\n\npool.on(\"error\", (err) => {\n  log.error(\"Unexpected pool error\", err);\n});\n\npool.on(\"remove\", () => {\n  log.debug(\"Client removed from pool\");\n});\n\nexport default pool;\n"],
-  "mappings": "AAAA,OAAO,QAAQ;AACf,SAAS,cAAc;AACvB,SAAS,oBAAoB;AAE7B,MAAM,MAAM,aAAa,UAAU;AAEnC,MAAM,OAAO,IAAI,GAAG,KAAK;AAAA,EACvB,kBAAkB,OAAO;AAAA,EACzB,KAAK;AAAA,EACL,mBAAmB;AAAA,EACnB,yBAAyB;AAC3B,CAAC;AAED,KAAK,GAAG,WAAW,MAAM;AACvB,MAAI,MAAM,8BAA8B;AAC1C,CAAC;AAED,KAAK,GAAG,SAAS,CAAC,QAAQ;AACxB,MAAI,MAAM,yBAAyB,GAAG;AACxC,CAAC;AAED,KAAK,GAAG,UAAU,MAAM;AACtB,MAAI,MAAM,0BAA0B;AACtC,CAAC;AAED,IAAO,eAAQ;",
-  "names": []
-}
