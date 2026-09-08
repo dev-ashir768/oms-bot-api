@@ -158,10 +158,10 @@ export async function trackConsignment(cn: string): Promise<string> {
   } catch (err) {
     log.error(`Tracking API failed`, { cn, duration: Date.now() - start, error: err });
     return [
-      `Abhi tracking system se response lene mein thora waqt lag raha hai.`,
-      `Please 1-2 minute baad dobara try karein.`,
+      `We are currently experiencing a slight delay retrieving tracking details.`,
+      `Please try again in 1-2 minutes.`,
       ``,
-      `Ya hamari team se direct rabta karein:`,
+      `Or reach out to our support team directly:`,
       `- WhatsApp: 0318-0268894`,
       `- Phone: 021-37293292`,
       `- Email: info@getorio.com`,
