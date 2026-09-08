@@ -13,7 +13,7 @@ export const config = {
   geminiApiKey: apiKeys[0] || "",
   geminiApiKeys: apiKeys,
   faissIndexDir: process.env.FAISS_INDEX_DIR || "./data/faiss_index",
-  ragTopK: parseInt(process.env.RAG_TOP_K || "5", 10),
+  ragTopK: parseInt(process.env.RAG_TOP_K || "8", 10),
   chatHistoryLimit: parseInt(process.env.CHAT_HISTORY_LIMIT || "4", 10),
   historyMessageMaxChars: parseInt(process.env.HISTORY_MESSAGE_MAX_CHARS || "300", 10),
   ragChunkMaxChars: parseInt(process.env.RAG_CHUNK_MAX_CHARS || "2500", 10),
