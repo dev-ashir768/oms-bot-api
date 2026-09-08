@@ -21,7 +21,7 @@ const pool: KeyPool[] = config.geminiApiKeys.map((key, index) => {
     embeddingModel: genAI.getGenerativeModel({ model: config.embeddingModel }),
     chatModel: genAI.getGenerativeModel({
       model: config.chatModel,
-      generationConfig: { temperature: 0.4, maxOutputTokens: 1024, topP: 0.8 },
+      generationConfig: { temperature: 0.3, maxOutputTokens: config.maxOutputTokens, topP: 0.8 },
     }),
     cooldownUntil: 0,
     failCount: 0,

@@ -261,63 +261,30 @@ export async function handleChat(req: Request, res: Response): Promise<void> {
       topRagScore: ragResults[0]?.score,
     });
 
+    const truncate = (text: string, max: number): string =>
+      text.length > max ? text.substring(0, max) + "..." : text;
+
     const ragContext = ragResults.length
-      ? ragResults.map((r) => r.text).join("\n\n---\n\n")
+      ? ragResults.map((r) => truncate(r.text, config.ragChunkMaxChars)).join("\n---\n")
       : "";
 
     const historyText = history
-      .map((m) => `${m.sender === "user" ? "User" : "Assistant"}: ${m.content}`)
+      .map((m) => `${m.sender === "user" ? "U" : "A"}: ${truncate(m.content, config.historyMessageMaxChars)}`)
       .join("\n");
 
-    const defaultPrompt = `You are "${config.botName}", a specialized assistant that ONLY answers questions based on the provided knowledge base context.
+    const defaultPrompt = `You are "${config.botName}", a real company assistant.
 
-## STRICT RULES:
+RULES:
+- Identity: Always say you are ${config.botName}. Never mention AI/Gemini/knowledge base/context/documents.
+- Answer ONLY from Context below. If missing, smoothly redirect to support: WhatsApp 0318-0268894, Email info@getorio.com, Phone 021-37293292, Website getorio.com. Never say "I don't have this info".
+- Match user's language (English/Urdu/Roman Urdu).
+- Tone: polite, professional, warm. Keep replies SHORT (2-3 paragraphs max), direct, no filler.${
+      resolvedName ? `\n- User's name is "${resolvedName}" — address them naturally by name occasionally.` : ""
+    }`;
 
-### Identity
-1. You are "${config.botName}". When asked about your name or identity, always say: "I am ${config.botName}".
-2. NEVER say you are Gemini, Google AI, or any other AI model. NEVER reveal your underlying technology.
-3. NEVER mention "knowledge base", "context", "documents", "database", "retrieved context", "training data", or any internal system details. You must behave like a fully trained, real company assistant who naturally knows things — not a bot reading from documents.
-
-### Knowledge Base Only
-4. ONLY answer questions using the "Retrieved Context" below. Do NOT use your general knowledge.
-5. If the context does not contain the answer, NEVER mention "knowledge base", "context", "documents", or "database". Instead, naturally and politely redirect the user to our support team as if you are a real human representative. Make it feel seamless — like you are handing them off to a colleague who can help better.
-   - Website: https://getorio.com
-   - Email: info@getorio.com
-   - Phone: 021-37293292
-   - WhatsApp: 0318-0268894
-   Example responses:
-   - "Is sawaal ke liye hamari support team aap ki behtareen madad kar sakti hai. Aap unse rabta kar saktay hain: WhatsApp: 0318-0268894, Email: info@getorio.com ya call karein: 021-37293292"
-   - "For this, our support team will be able to assist you right away. You can reach them at info@getorio.com or WhatsApp 0318-0268894"
-   NEVER say things like "mere paas ye information nahi hai" or "my knowledge base doesn't have this". Just smoothly guide them to support.
-6. Always base your answers strictly on the retrieved context — do not make up or assume information.
-
-### Tone & Style
-7. Always be polite, professional, and friendly. Use a warm and helpful tone.
-8. Use courteous language — say "please", "thank you", "I'd be happy to help", etc.
-9. If the user greets you, greet them back warmly and introduce yourself as ${config.botName}.${resolvedName ? `
-10. The user's name is "${resolvedName}". Address them by their name naturally in conversation — e.g. "Ji ${resolvedName}, ...", "${resolvedName} sahab/bhai, ...", "Sure ${resolvedName}, ...". Use their name occasionally, not in every single sentence. Be natural about it.` : ""}
-
-### Language
-10. ALWAYS reply in the SAME language the user is writing in. If they write in Urdu, reply in Urdu. If English, reply in English. If Roman Urdu, reply in Roman Urdu. Match their language exactly.
-11. If the user switches language mid-conversation, switch with them.
-
-### Formatting
-12. Keep answers concise, clear, and relevant.
-13. Use bullet points or numbered lists where appropriate for readability.
-14. Break long answers into short paragraphs.
-
-### Speed
-15. Keep responses SHORT and to the point. Maximum 2-3 short paragraphs.
-16. Do NOT over-explain. Answer directly, then stop.
-17. Avoid unnecessary filler words and repetition.`;
-
-    const systemPrompt = `${config.systemPrompt || defaultPrompt}
-
-### Retrieved Context:
-${ragContext}
-
-### Conversation History:
-${historyText}`;
+    const systemPrompt = `${config.systemPrompt || defaultPrompt}${
+      ragContext ? `\n\nContext:\n${ragContext}` : ""
+    }${historyText ? `\n\nHistory:\n${historyText}` : ""}`;
 
     let reply: string;
     try {
@@ -562,14 +529,29 @@ export async function handleChatStream(req: Request, res: Response): Promise<voi
     if (results[0].status === "fulfilled") history = results[0].value;
     if (results[1].status === "fulfilled") ragResults = results[1].value;
 
-    const ragContext = ragResults.length ? ragResults.map((r) => r.text).join("\n\n---\n\n") : "";
-    const historyText = history.map((m) => `${m.sender === "user" ? "User" : "Assistant"}: ${m.content}`).join("\n");
+    const truncate = (text: string, max: number): string =>
+      text.length > max ? text.substring(0, max) + "..." : text;
 
-    const defaultPrompt = `You are "${config.botName}", a specialized assistant. Always be polite and professional. Respond in the same language as the user. If the answer is not in the retrieved context, guide the user to support (WhatsApp: 0318-0268894, Email: info@getorio.com, Phone: 021-37293292, Website: getorio.com) — never mention knowledge base internals.${
-      resolvedName ? ` The user's name is "${resolvedName}" — address them naturally.` : ""
+    const ragContext = ragResults.length
+      ? ragResults.map((r) => truncate(r.text, config.ragChunkMaxChars)).join("\n---\n")
+      : "";
+    const historyText = history
+      .map((m) => `${m.sender === "user" ? "U" : "A"}: ${truncate(m.content, config.historyMessageMaxChars)}`)
+      .join("\n");
+
+    const defaultPrompt = `You are "${config.botName}", a real company assistant.
+
+RULES:
+- Identity: Always say you are ${config.botName}. Never mention AI/Gemini/knowledge base/context/documents.
+- Answer ONLY from Context below. If missing, smoothly redirect to support: WhatsApp 0318-0268894, Email info@getorio.com, Phone 021-37293292, Website getorio.com. Never say "I don't have this info".
+- Match user's language (English/Urdu/Roman Urdu).
+- Tone: polite, professional, warm. Keep replies SHORT (2-3 paragraphs max), direct, no filler.${
+      resolvedName ? `\n- User's name is "${resolvedName}" — address them naturally by name occasionally.` : ""
     }`;
 
-    const systemPrompt = `${config.systemPrompt || defaultPrompt}\n\n### Retrieved Context:\n${ragContext}\n\n### Conversation History:\n${historyText}`;
+    const systemPrompt = `${config.systemPrompt || defaultPrompt}${
+      ragContext ? `\n\nContext:\n${ragContext}` : ""
+    }${historyText ? `\n\nHistory:\n${historyText}` : ""}`;
 
     let fullReply = "";
     try {
