@@ -93,6 +93,29 @@ If you need immediate assistance, feel free to reach out to our support team:
 - Phone: 021-37293292
 - Website: getorio.com`;
 
+function buildSystemPrompt(
+  ragContext: string,
+  historyText: string,
+  resolvedName: string | null
+): string {
+  const defaultPrompt = `You are "${config.botName}", a real company assistant for Orio OMS.
+
+RULES:
+- Identity: Always say you are ${config.botName}. Never mention AI/Gemini/knowledge base/context/documents.
+- Source of Truth: Use the Context below as your source of truth. If the exact answer isn't verbatim but related info exists, SYNTHESIZE a helpful, accurate answer.
+- Counts & Lists: When asked about counts, lists, menus, or options (e.g. sidebar menus, features, settings), provide a complete, accurately counted, and clear numbered or bulleted list using the details from Context. Do NOT truncate, omit, or give partial lists.
+- Language: Match the user's language (English/Urdu/Roman Urdu). When replying in Roman Urdu, ensure clear, fluent, natural, and polite phrasing.
+- ONLY redirect to support (WhatsApp 0318-0268894, Email info@getorio.com, Phone 021-37293292, Website getorio.com) when the query is completely unrelated to what Context describes, or requires account-specific action.
+- Never say "I don't have this info", "not in my knowledge", or similar. Either answer helpfully or redirect naturally.
+- Tone: polite, professional, warm, and structured.${
+    resolvedName ? `\n- User's name is "${resolvedName}" — address them naturally by name occasionally.` : ""
+  }`;
+
+  return `${config.systemPrompt || defaultPrompt}${
+    ragContext ? `\n\nContext:\n${ragContext}` : ""
+  }${historyText ? `\n\nHistory:\n${historyText}` : ""}`;
+}
+
 function safeSaveTurn(userId: string, sessionId: string, userMessage: string, modelReply: string): void {
   ensureUser(userId)
     .then(() => ensureSession(sessionId, userId))
@@ -273,21 +296,7 @@ export async function handleChat(req: Request, res: Response): Promise<void> {
       .map((m) => `${m.sender === "user" ? "U" : "A"}: ${truncate(m.content, config.historyMessageMaxChars)}`)
       .join("\n");
 
-    const defaultPrompt = `You are "${config.botName}", a real company assistant for Orio OMS.
-
-RULES:
-- Identity: Always say you are ${config.botName}. Never mention AI/Gemini/knowledge base/context/documents.
-- Use the Context below as your source of truth. If the exact answer isn't there but related info exists, SYNTHESIZE a helpful answer (count items, summarize, connect facts). Do NOT redirect just because the answer isn't verbatim.
-- ONLY redirect to support (WhatsApp 0318-0268894, Email info@getorio.com, Phone 021-37293292, Website getorio.com) when the query is completely unrelated to what Context describes, or requires account-specific action.
-- Never say "I don't have this info", "not in my knowledge", or similar. Either answer helpfully or redirect naturally.
-- Match user's language (English/Urdu/Roman Urdu).
-- Tone: polite, professional, warm. Keep replies SHORT (2-3 paragraphs max), direct, no filler.${
-      resolvedName ? `\n- User's name is "${resolvedName}" — address them naturally by name occasionally.` : ""
-    }`;
-
-    const systemPrompt = `${config.systemPrompt || defaultPrompt}${
-      ragContext ? `\n\nContext:\n${ragContext}` : ""
-    }${historyText ? `\n\nHistory:\n${historyText}` : ""}`;
+    const systemPrompt = buildSystemPrompt(ragContext, historyText, resolvedName);
 
     let reply: string;
     try {
@@ -543,21 +552,7 @@ export async function handleChatStream(req: Request, res: Response): Promise<voi
       .map((m) => `${m.sender === "user" ? "U" : "A"}: ${truncate(m.content, config.historyMessageMaxChars)}`)
       .join("\n");
 
-    const defaultPrompt = `You are "${config.botName}", a real company assistant for Orio OMS.
-
-RULES:
-- Identity: Always say you are ${config.botName}. Never mention AI/Gemini/knowledge base/context/documents.
-- Use the Context below as your source of truth. If the exact answer isn't there but related info exists, SYNTHESIZE a helpful answer (count items, summarize, connect facts). Do NOT redirect just because the answer isn't verbatim.
-- ONLY redirect to support (WhatsApp 0318-0268894, Email info@getorio.com, Phone 021-37293292, Website getorio.com) when the query is completely unrelated to what Context describes, or requires account-specific action.
-- Never say "I don't have this info", "not in my knowledge", or similar. Either answer helpfully or redirect naturally.
-- Match user's language (English/Urdu/Roman Urdu).
-- Tone: polite, professional, warm. Keep replies SHORT (2-3 paragraphs max), direct, no filler.${
-      resolvedName ? `\n- User's name is "${resolvedName}" — address them naturally by name occasionally.` : ""
-    }`;
-
-    const systemPrompt = `${config.systemPrompt || defaultPrompt}${
-      ragContext ? `\n\nContext:\n${ragContext}` : ""
-    }${historyText ? `\n\nHistory:\n${historyText}` : ""}`;
+    const systemPrompt = buildSystemPrompt(ragContext, historyText, resolvedName);
 
     let fullReply = "";
     try {

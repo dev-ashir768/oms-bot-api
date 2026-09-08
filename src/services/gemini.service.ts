@@ -237,7 +237,7 @@ function isLikelyEnglish(text: string): boolean {
   const urduRegex = /[؀-ۿ]/;
   if (urduRegex.test(t)) return false;
 
-  const romanUrduMarkers = /\b(hai|hain|kya|kaise|kaisa|kitne|kitna|mera|meri|mere|aap|tum|kar|karo|karna|nahi|nhi|q|kn|kn kn|ky|ma|mein|sa|se|ka|ki|ke|ko|pe|par|tw|to|phr|phir|jab|jo|kaha|kahan|abhi|bhi|ho|hoga|hogi|batao|dikhao|dena|de|do|hun|hu|liye|paani|thora|bohat|zyada|bilkul|acha|thik|theek|chal|chalo|dekh|dekho|sunno|kuch|sab|sabhi|har|koi|aur|ya|magar|lekin|agar|jise|jisay|iske|iski|iska|uska|uski|uske)\b/i;
+  const romanUrduMarkers = /\b(hai|hain|hn|hyn|hein|he|h|kya|ky|kia|kaise|kaisa|kese|ksy|kaisay|kitne|kitna|kitny|kitni|kiutne|ktne|ktny|konsa|konse|konsi|kon|koun|q|kyun|kyo|kis|kisko|kiska|kiski|kiske|mera|meri|mere|aap|ap|tum|apka|apki|apke|apko|kar|karo|karna|kare|karein|kren|kr|kro|krna|nahi|nhi|nh|na|ma|mai|me|mein|men|m|sa|se|sy|ka|ki|ke|ko|k|pe|par|pr|tw|to|phr|phir|jab|jo|kaha|kahan|kha|khan|abhi|abh|bhi|bh|b|ho|hoga|hogi|honge|hoge|batao|bataiye|btayein|btao|bta|btado|dikhao|dekho|dekh|dena|de|do|dijye|hun|hu|hoon|liye|leye|lye|paani|thora|thoda|bohat|bht|zyada|zada|bilkul|acha|accha|thik|theek|thk|sahi|chal|chalo|sunno|suno|kuch|kch|sab|sabhi|har|koi|aur|ya|magar|lekin|lkn|agar|agr|jise|jisay|jisko|iske|iski|iska|isko|unka|unki|unke|unko|uska|uski|uske|usko|mujhe|mjhe|mjy|mujy|hume|humain|humein|sakta|sakte|sakti|skta|skte|skti|raha|rahe|rahi|rahay|hota|hote|hoti|hotay|wgera|waghera|shukriya|shukrya|wala|wali|wale|walay)\b/i;
 
   if (romanUrduMarkers.test(t)) return false;
   return true;
@@ -253,11 +253,11 @@ export async function translateForSearch(text: string): Promise<string> {
   }
 
   const start = Date.now();
-  const prompt = `Translate the following question to concise English keywords suitable for a knowledge base search. Reply with ONLY the translated text, no explanation, no punctuation, no quotes.
+  const prompt = `Translate the following user question (which may be in Roman Urdu, Urdu, or mixed language) into a clear, descriptive English search query suitable for semantic vector search in an Order Management System (OMS) knowledge base. Preserve important domain entities (e.g. sidebar, menus, dashboard, orders, shipments, load sheets, tracking, settings, picklist, etc.). Reply with ONLY the translated English search query, no explanation, no punctuation, no quotes.
 
-Question: ${text}
+User Question: ${text}
 
-English:`;
+English Search Query:`;
 
   try {
     const translated = await withRotation(async (client) => {
